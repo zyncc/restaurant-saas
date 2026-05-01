@@ -11,8 +11,10 @@ pub struct AppConfig {
     crate::api::auth::routes::register,
     crate::api::auth::routes::login,
     crate::api::auth::routes::signout,
+    crate::api::auth::routes::get_session,
     crate::api::payment::routes::create_stripe_checkout,
     crate::api::payment::routes::stripe_webhook,
+    crate::api::subscription::routes::manage_subscription,
 ))]
 pub struct ApiDoc;
 

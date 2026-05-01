@@ -59,6 +59,7 @@ impl SessionRepository {
     staff.role,
     staff.onboarding_step,
     staff.is_active,
+    staff.stripe_customer_id,
     sub.plan as "sub_plan?",
     sub.status as "sub_status?",
     sub.current_period_end as "sub_current_period_end?"

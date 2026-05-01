@@ -85,7 +85,10 @@ pub async fn login(
         let session = SessionRepository::new(app.db.clone())
             .fetch_staff_session(&token)
             .await
-            .map_err(|_| ApiError::InternalServerError())?;
+            .map_err(|e| {
+                tracing::error!("failed to fetch staff session: {}", e);
+                ApiError::InternalServerError()
+            })?;
 
         if session.is_some() {
             return Err(ApiError::BadRequest("already logged in".to_string()));

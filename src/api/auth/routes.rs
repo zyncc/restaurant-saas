@@ -8,7 +8,6 @@ use axum_extra::extract::{
     CookieJar,
     cookie::{Cookie, SameSite},
 };
-use serde_json::json;
 use std::net::SocketAddr;
 
 use crate::{
@@ -133,9 +132,26 @@ pub async fn signout(
     ))
 }
 
+#[utoipa::path(
+    get,
+    path = "/auth/get-session",
+    params(
+            ("Authorization" = String, Header, description = "Bearer token for authentication"),
+        ),
+    description = "Get Session Information for Logged in User",
+    responses(
+        (status = OK, body = SuccessResponse<GetStaffSession>),
+        (status = INTERNAL_SERVER_ERROR, body = ErrorResponse),
+    )
+)]
 pub async fn get_session(
     Extension(session): Extension<GetStaffSession>,
 ) -> Result<impl IntoResponse, ApiError> {
     let session = services::get_session(session).await?;
-    Ok(Json(json!({"success": true, "data": session})))
+
+    Ok(Json(SuccessResponse::<GetStaffSession> {
+        data: Some(session),
+        success: true,
+        message: None,
+    }))
 }

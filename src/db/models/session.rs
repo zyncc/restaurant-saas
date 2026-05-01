@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::Serialize;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
@@ -13,7 +14,7 @@ pub struct StaffSession {
     pub expires_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow, Serialize)]
+#[derive(Debug, Clone, sqlx::FromRow, Serialize, ToSchema)]
 pub struct GetStaffSession {
     pub id: Uuid,
     pub restaurant_id: Option<Uuid>,
@@ -21,6 +22,7 @@ pub struct GetStaffSession {
     pub email: String,
     pub role: String,
     pub onboarding_step: Option<String>,
+    pub stripe_customer_id: Option<String>,
     pub is_active: bool,
     pub sub_plan: Option<String>,
     pub sub_status: Option<String>,

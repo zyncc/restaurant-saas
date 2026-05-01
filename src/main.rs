@@ -8,9 +8,7 @@ mod utils;
 use std::net::SocketAddr;
 
 use crate::{
-    api::{
-        auth::auth_controller, payment::payment_handler, subscription::routes::subscription_handler,
-    },
+    api::{auth::auth_controller, payment::payment_handler, subscription::subscription_handler},
     config::AppConfig,
     db::pool::connect_to_db,
     middleware::cors::cors,
@@ -33,7 +31,7 @@ async fn main() {
     let app = Router::new()
         .nest("/auth", auth_controller(app_config.clone()))
         .nest("/payment", payment_handler(app_config.clone()))
-        .nest("/subscription", subscription_handler())
+        .nest("/subscription", subscription_handler(app_config.clone()))
         .layer(cors())
         .with_state(app_config)
         .merge(SwaggerUi::new("/swagger-ui").url("/docs/openapi.json", config::ApiDoc::openapi()));

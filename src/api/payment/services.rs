@@ -8,6 +8,7 @@ use crate::{
     config::AppConfig,
     db::{
         models::{session::GetStaffSession, subscription::CreateSubscriptionDto},
+        staff::StaffRepository,
         subscription::SubscriptionRepository,
     },
     error::ApiError,
@@ -44,48 +45,72 @@ pub async fn create_checkout(
             "1-month" => {
                 plan = "basic";
                 duration = "1-month";
-                stripe_price_id = std::env::var("STRIPE_PRICE_ID_BASIC_1M")
-                    .map_err(|_| ApiError::InternalServerError())?;
+                stripe_price_id = std::env::var("STRIPE_PRICE_ID_BASIC_1M").map_err(|e| {
+                    tracing::error!("environment variable not set: {}", e.to_string());
+                    ApiError::InternalServerError()
+                })?;
             }
             "1-year" => {
                 plan = "basic";
                 duration = "1-year";
-                stripe_price_id = std::env::var("STRIPE_PRICE_ID_BASIC_1Y")
-                    .map_err(|e| ApiError::BadRequest(e.to_string()))?
+                stripe_price_id = std::env::var("STRIPE_PRICE_ID_BASIC_1Y").map_err(|e| {
+                    tracing::error!("environment variable not set: {}", e.to_string());
+                    ApiError::InternalServerError()
+                })?
             }
-            _ => return Err(ApiError::BadRequest("invalid duration".to_string())),
+            _ => {
+                tracing::error!("invalid duratipn");
+                return Err(ApiError::BadRequest("invalid duration".to_string()));
+            }
         },
         "pro" => match body.duration.as_str() {
             "1-month" => {
                 plan = "pro";
                 duration = "1-month";
-                stripe_price_id = std::env::var("STRIPE_PRICE_ID_PRO_1M")
-                    .map_err(|_| ApiError::InternalServerError())?
+                stripe_price_id = std::env::var("STRIPE_PRICE_ID_PRO_1M").map_err(|e| {
+                    tracing::error!("environment variable not set: {}", e.to_string());
+                    ApiError::InternalServerError()
+                })?
             }
             "1-year" => {
                 plan = "pro";
                 duration = "1-year";
-                stripe_price_id = std::env::var("STRIPE_PRICE_ID_PRO_1Y")
-                    .map_err(|_| ApiError::InternalServerError())?
+                stripe_price_id = std::env::var("STRIPE_PRICE_ID_PRO_1Y").map_err(|e| {
+                    tracing::error!("environment variable not set: {}", e.to_string());
+                    ApiError::InternalServerError()
+                })?
             }
-            _ => return Err(ApiError::BadRequest("invalid duration".to_string())),
+            _ => {
+                tracing::error!("invalid duratipn");
+                return Err(ApiError::BadRequest("invalid duration".to_string()));
+            }
         },
         "ultimate" => match body.duration.as_str() {
             "1-month" => {
                 plan = "ultimate";
                 duration = "1-month";
-                stripe_price_id = std::env::var("STRIPE_PRICE_ID_ULTIMATE_1M")
-                    .map_err(|_| ApiError::InternalServerError())?
+                stripe_price_id = std::env::var("STRIPE_PRICE_ID_ULTIMATE_1M").map_err(|e| {
+                    tracing::error!("environment variable not set: {}", e.to_string());
+                    ApiError::InternalServerError()
+                })?
             }
             "1-year" => {
                 plan = "ultimate";
                 duration = "1-year";
-                stripe_price_id = std::env::var("STRIPE_PRICE_ID_ULTIMATE_1Y")
-                    .map_err(|_| ApiError::InternalServerError())?
+                stripe_price_id = std::env::var("STRIPE_PRICE_ID_ULTIMATE_1Y").map_err(|e| {
+                    tracing::error!("environment variable not set: {}", e.to_string());
+                    ApiError::InternalServerError()
+                })?
             }
-            _ => return Err(ApiError::BadRequest("invalid duration".to_string())),
+            _ => {
+                tracing::error!("invalid duratipn");
+                return Err(ApiError::BadRequest("invalid duration".to_string()));
+            }
         },
-        _ => return Err(ApiError::BadRequest("invalid plan".to_string())),
+        _ => {
+            tracing::error!("invalid plan");
+            return Err(ApiError::BadRequest("invalid duration".to_string()));
+        }
     }
 
     // call stripe api to create checkout session
@@ -121,7 +146,7 @@ pub async fn stripe_webhook(
             ApiError::BadRequest("failed to parse uuid".to_string())
         })?,
         stripe_subscription_id: body.data.object.parent.subscription_details.subscription,
-        stripe_customer_id: body.data.object.customer,
+        stripe_customer_id: body.data.object.customer.clone(),
         stripe_price_id: body.data.object.lines.data[0]
             .pricing
             .price_details
@@ -163,5 +188,35 @@ pub async fn stripe_webhook(
             tracing::error!("failed to create subscription {}", e);
             ApiError::SqlxError("failed to create subscription".to_string())
         })?;
+
+    StaffRepository::new(app.db.clone())
+        .update_onboarding_step(
+            Uuid::from_str(
+                &body
+                    .data
+                    .object
+                    .parent
+                    .subscription_details
+                    .metadata
+                    .user_id,
+            )
+            .map_err(|e| {
+                tracing::error!("failed to parse user_id as UUID: {}", e);
+                ApiError::BadRequest("failed to parse uuid".to_string())
+            })?,
+            &body.data.object.customer,
+            "create_restaurant",
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("failed to update staff details: {}", e);
+            ApiError::InternalServerError()
+        })?;
+
+    tx.commit().await.map_err(|e| {
+        tracing::error!("create / update subscription transaction failed");
+        ApiError::InternalServerError()
+    })?;
+
     return Ok(());
 }

@@ -10,6 +10,7 @@ pub struct StaffMember {
     pub name: String,
     pub email: String,
     pub password_hash: String,
+    pub stripe_customer_id: Option<String>,
     pub onboarding_step: Option<String>,
     pub is_active: bool,
     pub created_at: DateTime<Utc>,

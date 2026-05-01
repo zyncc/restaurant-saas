@@ -1,7 +1,10 @@
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::db::models::staff::{CreateOwnerParams, CreateStaffMemberParams, StaffMember};
+use crate::{
+    db::models::staff::{CreateOwnerParams, CreateStaffMemberParams, StaffMember},
+    error::ApiError,
+};
 
 pub struct StaffRepository {
     pool: PgPool,
@@ -60,15 +63,24 @@ impl StaffRepository {
     pub async fn update_onboarding_step(
         &self,
         id: Uuid,
+        stripe_customer_id: &str,
         onboarding_step: &str,
-    ) -> Result<(), sqlx::Error> {
+    ) -> Result<(), ApiError> {
         sqlx::query!(
-            "UPDATE restaurant_staff SET onboarding_step = $1, updated_at = now() WHERE id = $2",
+            "UPDATE restaurant_staff
+                     SET onboarding_step = $1, stripe_customer_id = $2, updated_at = now()
+                     WHERE id = $3
+                     AND onboarding_step NOT IN ('complete', 'create_restaurant')",
             onboarding_step,
+            stripe_customer_id,
             id
         )
         .execute(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            tracing::error!("failed to update staff member: {e}");
+            ApiError::InternalServerError()
+        })?;
         Ok(())
     }
 }

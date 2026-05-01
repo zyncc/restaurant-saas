@@ -19,8 +19,19 @@ use crate::{
     config::AppConfig,
     db::models::session::GetStaffSession,
     error::ApiError,
+    utils::api_responses::{ErrorResponse, SuccessResponse},
 };
 
+#[utoipa::path(
+    post,
+    path = "/auth/register",
+    description = "Register a new owner",
+    request_body = RegisterStaffMemberRequest,
+    responses(
+        (status = OK, body = SuccessResponse<String>),
+        (status = INTERNAL_SERVER_ERROR, body = ErrorResponse),
+    )
+)]
 pub async fn register(
     State(app): State<AppConfig>,
     Json(body): Json<RegisterStaffMemberRequest>,
@@ -29,11 +40,23 @@ pub async fn register(
         return Err(e);
     };
 
-    Ok(Json(
-        json!({"success": true, "message": "registered successfully"}),
-    ))
+    Ok(Json(SuccessResponse::<()> {
+        success: true,
+        message: Some("registered successfully".to_string()),
+        data: None,
+    }))
 }
 
+#[utoipa::path(
+    post,
+    path = "/auth/login",
+    description = "Login a user",
+    request_body = LoginRequest,
+    responses(
+        (status = OK, body = SuccessResponse<String>),
+        (status = INTERNAL_SERVER_ERROR, body = ErrorResponse),
+    )
+)]
 pub async fn login(
     State(app): State<AppConfig>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
@@ -64,10 +87,23 @@ pub async fn login(
 
     Ok((
         jar.add(cookie),
-        Json(json!({"success": true, "message": "logged in successfully"})),
+        Json(SuccessResponse::<()> {
+            success: true,
+            message: Some("logged in successfully".to_string()),
+            data: None,
+        }),
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/auth/signout",
+    description = "Signout a user",
+    responses(
+        (status = OK, body = SuccessResponse<String>),
+        (status = INTERNAL_SERVER_ERROR, body = ErrorResponse),
+    )
+)]
 pub async fn signout(
     State(app): State<AppConfig>,
     jar: CookieJar,
@@ -89,7 +125,11 @@ pub async fn signout(
 
     Ok((
         jar.remove(cookie),
-        Json(json!({"success": true, "message": "signed out successfully"})),
+        Json(SuccessResponse::<()> {
+            success: true,
+            data: None,
+            message: Some("signed out successfully".to_string()),
+        }),
     ))
 }
 

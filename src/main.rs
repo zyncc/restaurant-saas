@@ -9,8 +9,7 @@ use std::net::SocketAddr;
 
 use crate::{
     api::{
-        auth::auth_controller, payment::routes::payment_handler,
-        subscription::routes::subscription_handler,
+        auth::auth_controller, payment::payment_handler, subscription::routes::subscription_handler,
     },
     config::AppConfig,
     db::pool::connect_to_db,
@@ -19,6 +18,8 @@ use crate::{
 use axum::Router;
 use tokio::net::TcpListener;
 use tracing::info;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 #[tokio::main]
 async fn main() {
@@ -31,10 +32,11 @@ async fn main() {
 
     let app = Router::new()
         .nest("/auth", auth_controller(app_config.clone()))
-        .nest("/payment", payment_handler())
+        .nest("/payment", payment_handler(app_config.clone()))
         .nest("/subscription", subscription_handler())
         .layer(cors())
-        .with_state(app_config);
+        .with_state(app_config)
+        .merge(SwaggerUi::new("/swagger-ui").url("/docs/openapi.json", config::ApiDoc::openapi()));
 
     let listener = TcpListener::bind("0.0.0.0:8000").await.unwrap();
 

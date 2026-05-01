@@ -32,8 +32,9 @@ validator = { version = "0.20", features = ["derive"] }
 regex = "1"
 argon2 = "0.5.3"
 time = "0.3.47"
+utoipa = { version = "5.4.0", features = ["axum_extras", "chrono"] }
+utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
+reqwest = { version = "0.13.3", features = ["form", "json"] }
 
 [profile.release]
-lto = true
-codegen-units = 1
 panic = "abort"

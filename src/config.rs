@@ -1,9 +1,20 @@
 use sqlx::PgPool;
+use utoipa::OpenApi;
 
 #[derive(Clone)]
 pub struct AppConfig {
     pub db: PgPool,
 }
+
+#[derive(OpenApi)]
+#[openapi(paths(
+    crate::api::auth::routes::register,
+    crate::api::auth::routes::login,
+    crate::api::auth::routes::signout,
+    crate::api::payment::routes::create_stripe_checkout,
+    crate::api::payment::routes::stripe_webhook,
+))]
+pub struct ApiDoc;
 
 pub fn init() {
     match dotenvy::dotenv() {

@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+use serde::Deserialize;
+use utoipa::ToSchema;
 use validator::Validate;
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct RegisterStaffMemberRequest {
     #[validate(length(min = 1, message = "name cannot be empty"))]
     pub name: String,
@@ -18,24 +18,15 @@ pub struct RegisterStaffMemberRequest {
     pub confirm_password: String,
 }
 
-#[derive(Debug, Deserialize, Validate)]
+#[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct LoginRequest {
     #[validate(email(message = "invalid email address"))]
     pub email: String,
     pub password: String,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct CreateCheckoutRequest {
-    pub plan: String,
-    pub duration: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct StaffMemberResponse {
-    pub id: Uuid,
-    pub name: String,
-    pub email: String,
-    pub phone: String,
-    pub onboarding_step: String,
-}
+// #[derive(Debug, Deserialize)]
+// pub struct CreateCheckoutRequest {
+//     pub plan: String,
+//     pub duration: String,
+// }

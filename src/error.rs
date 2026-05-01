@@ -3,9 +3,10 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
-use serde_json::json;
 
 use thiserror::Error;
+
+use crate::utils::api_responses::ErrorResponse;
 
 #[derive(Debug, Error)]
 #[allow(dead_code)]
@@ -43,7 +44,11 @@ impl IntoResponse for ApiError {
             ),
         };
 
-        let body = Json(json!({"success": false, "error": message })).into_response();
+        let body = Json(ErrorResponse {
+            success: false,
+            error: message.to_string(),
+        })
+        .into_response();
         (status, body).into_response()
     }
 }

@@ -110,7 +110,7 @@ pub async fn signout(
     let session_token = jar
         .get("session_token")
         .map(|c| c.value().to_string())
-        .ok_or_else(|| ApiError::UnAuthenticated("session token is missing".to_string()))?;
+        .ok_or_else(|| ApiError::UnAuthenticated)?;
 
     services::signout(app, &session_token).await?;
 

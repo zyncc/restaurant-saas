@@ -46,7 +46,7 @@ pub async fn register(app: AppConfig, body: RegisterStaffMemberRequest) -> Resul
         .hash_password(raw_password, &salt)
         .map_err(|e| {
             tracing::error!("failed to hash password: {}", e);
-            return ApiError::InternalServerError();
+            return ApiError::InternalServerError;
         })?
         .to_string();
 
@@ -57,8 +57,7 @@ pub async fn register(app: AppConfig, body: RegisterStaffMemberRequest) -> Resul
         password_hash: hashed_password,
     };
 
-    StaffRepository::new(app.db)
-        .create_owner(owner)
+    StaffRepository::create_owner(&app.db, owner)
         .await
         .map_err(|e| {
             if e.to_string().contains("violates unique constraint") {
@@ -67,7 +66,7 @@ pub async fn register(app: AppConfig, body: RegisterStaffMemberRequest) -> Resul
                 );
             }
             tracing::error!("failed to insert staff member to db, {}", e);
-            ApiError::InternalServerError()
+            ApiError::InternalServerError
         })?;
 
     tracing::info!("registered staff member");
@@ -82,12 +81,11 @@ pub async fn login(
     existing_session: Option<String>,
 ) -> Result<String, ApiError> {
     if let Some(token) = existing_session {
-        let session = SessionRepository::new(app.db.clone())
-            .fetch_staff_session(&token)
+        let session = SessionRepository::fetch_staff_session(&app.db, &token)
             .await
             .map_err(|e| {
                 tracing::error!("failed to fetch staff session: {}", e);
-                ApiError::InternalServerError()
+                ApiError::InternalServerError
             })?;
 
         if session.is_some() {
@@ -95,21 +93,20 @@ pub async fn login(
         }
     }
 
-    let find_staff = StaffRepository::new(app.db.clone())
-        .find_by_email(&body.email)
+    let find_staff = StaffRepository::find_by_email(&app.db, &body.email)
         .await
-        .map_err(|e| {
-            if e.to_string().contains("not found") {
-                return ApiError::BadRequest("invalid credentials".to_string());
+        .map_err(|e| match e {
+            sqlx::Error::RowNotFound => ApiError::BadRequest("invalid credentials".to_string()),
+            e => {
+                tracing::error!("failed to fetch staff member by email: {}", e);
+                ApiError::InternalServerError
             }
-            tracing::error!("failed to fetch staff member by email: {}", e);
-            ApiError::InternalServerError()
         })?;
 
     // compare password with hashed password
     let parsed_hash = PasswordHash::new(&find_staff.password_hash).map_err(|e| {
         tracing::error!("failed to parse password hash: {}", e);
-        ApiError::InternalServerError()
+        ApiError::InternalServerError
     })?;
 
     Argon2::default()
@@ -127,12 +124,11 @@ pub async fn login(
         user_agent: Some(user_agent),
     };
 
-    SessionRepository::new(app.db)
-        .create_session(session)
+    SessionRepository::create_session(&app.db, session)
         .await
         .map_err(|e| {
             tracing::error!("failed to create database user session: {}", e);
-            ApiError::InternalServerError()
+            ApiError::InternalServerError
         })?;
 
     tracing::info!("user {} logged in successfully", find_staff.id);
@@ -140,12 +136,11 @@ pub async fn login(
 }
 
 pub async fn signout(app: AppConfig, session_token: &str) -> Result<(), ApiError> {
-    SessionRepository::new(app.db)
-        .delete_session(&session_token)
+    SessionRepository::delete_session(&app.db, &session_token)
         .await
         .map_err(|e| {
             tracing::error!("failed to delete session: {}", e);
-            ApiError::InternalServerError()
+            ApiError::InternalServerError
         })?;
 
     Ok(())

@@ -17,7 +17,7 @@ pub async fn create_checkout_session(
     let client = Client::new();
     let stripe_secret_key = std::env::var("STRIPE_SECRET_KEY").map_err(|e| {
         tracing::error!("stripe secret key is required: {}", e);
-        return ApiError::InternalServerError();
+        return ApiError::InternalServerError;
     })?;
 
     let response = client
@@ -49,13 +49,13 @@ pub async fn create_checkout_session(
         .await
         .map_err(|e| {
             tracing::error!("failed to create stripe checkout session: {}", e);
-            ApiError::InternalServerError()
+            ApiError::InternalServerError
         })?
         .json::<CreateCheckoutSessionResponse>()
         .await
         .map_err(|e| {
             tracing::error!("failed to parse stripe checkout session response: {}", e);
-            ApiError::InternalServerError()
+            ApiError::InternalServerError
         })?;
 
     Ok(response.url)
@@ -66,7 +66,7 @@ pub async fn create_portal_session(customer_id: &str) -> Result<String, ApiError
 
     let stripe_secret_key = std::env::var("STRIPE_SECRET_KEY").map_err(|e| {
         tracing::error!("stripe secret key is required: {}", e);
-        return ApiError::InternalServerError();
+        return ApiError::InternalServerError;
     })?;
 
     let response = client
@@ -80,13 +80,13 @@ pub async fn create_portal_session(customer_id: &str) -> Result<String, ApiError
         .await
         .map_err(|e| {
             tracing::error!("failed to create stripe checkout session: {}", e);
-            ApiError::InternalServerError()
+            ApiError::InternalServerError
         })?
         .json::<CreatePortalSessionResponse>()
         .await
         .map_err(|e| {
             tracing::error!("failed to parse stripe checkout session response: {}", e);
-            ApiError::InternalServerError()
+            ApiError::InternalServerError
         })?;
 
     Ok(response.url)

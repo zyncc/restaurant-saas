@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+#[allow(dead_code)]
 pub struct Subscription {
     pub id: Uuid,
     pub staff_id: Uuid,

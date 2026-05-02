@@ -23,19 +23,18 @@ pub async fn create_checkout(
     // check if user already has an active subscription
 
     // TODO: UNCOMMENT THIS LATER
-    // let subscription = SubscriptionRepository::new(app.db)
-    //     .check_active_subscription()
-    //     .await
-    //     .map_err(|e| {
-    //         tracing::error!("failed to fetch active subscription: {}", e);
-    //         ApiError::SqlxError(e.to_string())
-    //     })?;
+    let subscription = SubscriptionRepository::check_active_subscription(&app.db)
+        .await
+        .map_err(|e| {
+            tracing::error!("failed to fetch active subscription: {}", e);
+            ApiError::InternalServerError
+        })?;
 
-    // if subscription.is_some() {
-    //     return Err(ApiError::BadRequest(
-    //         "you already have an active subscription".to_string(),
-    //     ));
-    // }
+    if subscription.is_some() {
+        return Err(ApiError::BadRequest(
+            "you already have an active subscription".to_string(),
+        ));
+    }
 
     let stripe_price_id;
     let plan;
@@ -47,7 +46,7 @@ pub async fn create_checkout(
                 duration = "1-month";
                 stripe_price_id = std::env::var("STRIPE_PRICE_ID_BASIC_1M").map_err(|e| {
                     tracing::error!("environment variable not set: {}", e.to_string());
-                    ApiError::InternalServerError()
+                    ApiError::InternalServerError
                 })?;
             }
             "1-year" => {
@@ -55,7 +54,7 @@ pub async fn create_checkout(
                 duration = "1-year";
                 stripe_price_id = std::env::var("STRIPE_PRICE_ID_BASIC_1Y").map_err(|e| {
                     tracing::error!("environment variable not set: {}", e.to_string());
-                    ApiError::InternalServerError()
+                    ApiError::InternalServerError
                 })?
             }
             _ => {
@@ -69,7 +68,7 @@ pub async fn create_checkout(
                 duration = "1-month";
                 stripe_price_id = std::env::var("STRIPE_PRICE_ID_PRO_1M").map_err(|e| {
                     tracing::error!("environment variable not set: {}", e.to_string());
-                    ApiError::InternalServerError()
+                    ApiError::InternalServerError
                 })?
             }
             "1-year" => {
@@ -77,7 +76,7 @@ pub async fn create_checkout(
                 duration = "1-year";
                 stripe_price_id = std::env::var("STRIPE_PRICE_ID_PRO_1Y").map_err(|e| {
                     tracing::error!("environment variable not set: {}", e.to_string());
-                    ApiError::InternalServerError()
+                    ApiError::InternalServerError
                 })?
             }
             _ => {
@@ -91,7 +90,7 @@ pub async fn create_checkout(
                 duration = "1-month";
                 stripe_price_id = std::env::var("STRIPE_PRICE_ID_ULTIMATE_1M").map_err(|e| {
                     tracing::error!("environment variable not set: {}", e.to_string());
-                    ApiError::InternalServerError()
+                    ApiError::InternalServerError
                 })?
             }
             "1-year" => {
@@ -99,7 +98,7 @@ pub async fn create_checkout(
                 duration = "1-year";
                 stripe_price_id = std::env::var("STRIPE_PRICE_ID_ULTIMATE_1Y").map_err(|e| {
                     tracing::error!("environment variable not set: {}", e.to_string());
-                    ApiError::InternalServerError()
+                    ApiError::InternalServerError
                 })?
             }
             _ => {
@@ -178,44 +177,42 @@ pub async fn stripe_webhook(
 
     let mut tx = app.db.begin().await.map_err(|e| {
         tracing::error!("failed to create database transaction: {}", e);
-        ApiError::InternalServerError()
+        ApiError::InternalServerError
     })?;
 
-    SubscriptionRepository::new(app.db.clone())
-        .create_subscription(data, &mut *tx)
+    SubscriptionRepository::create_subscription(&mut *tx, data)
         .await
         .map_err(|e| {
             tracing::error!("failed to create subscription {}", e);
-            ApiError::SqlxError("failed to create subscription".to_string())
+            ApiError::InternalServerError
         })?;
 
-    StaffRepository::new(app.db.clone())
-        .update_onboarding_step(
-            Uuid::from_str(
-                &body
-                    .data
-                    .object
-                    .parent
-                    .subscription_details
-                    .metadata
-                    .user_id,
-            )
-            .map_err(|e| {
-                tracing::error!("failed to parse user_id as UUID: {}", e);
-                ApiError::BadRequest("failed to parse uuid".to_string())
-            })?,
-            &body.data.object.customer,
-            "create_restaurant",
-        )
-        .await
-        .map_err(|e| {
-            tracing::error!("failed to update staff details: {}", e);
-            ApiError::InternalServerError()
-        })?;
+    let user_id = &body
+        .data
+        .object
+        .parent
+        .subscription_details
+        .metadata
+        .user_id;
+
+    StaffRepository::update_onboarding_step(
+        &mut *tx,
+        Uuid::from_str(user_id).map_err(|e| {
+            tracing::error!("failed to parse user_id as UUID: {}", e);
+            ApiError::BadRequest("failed to parse uuid".to_string())
+        })?,
+        &body.data.object.customer,
+        "create_restaurant",
+    )
+    .await
+    .map_err(|e| {
+        tracing::error!("failed to update staff details: {}", e);
+        ApiError::InternalServerError
+    })?;
 
     tx.commit().await.map_err(|e| {
-        tracing::error!("create / update subscription transaction failed");
-        ApiError::InternalServerError()
+        tracing::error!("create / update subscription transaction failed: {e}");
+        ApiError::InternalServerError
     })?;
 
     return Ok(());

@@ -1,12 +1,10 @@
+use crate::utils::api_responses::ErrorResponse;
 use axum::{
     Json,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
-
 use thiserror::Error;
-
-use crate::utils::api_responses::ErrorResponse;
 
 #[derive(Debug, Error)]
 #[allow(dead_code)]
@@ -14,33 +12,35 @@ pub enum ApiError {
     #[error("Bad request: {0}")]
     BadRequest(String),
 
-    #[error("Unauthenticated: {0}")]
-    UnAuthenticated(String),
+    #[error("Unauthenticated")]
+    UnAuthenticated,
 
-    #[error("Unauthorized: {0}")]
-    UnAuthorized(String),
+    #[error("Unauthorized")]
+    UnAuthorized,
 
     #[error("Notfound: {0}")]
     NotFound(String),
 
-    #[error("Database query failed: {0}")]
-    SqlxError(String),
-
     #[error("Unexpected Server Error")]
-    InternalServerError(),
+    InternalServerError,
 }
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         let (status, message) = match &self {
-            ApiError::SqlxError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
-            ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
-            ApiError::UnAuthenticated(msg) => (StatusCode::UNAUTHORIZED, msg),
-            ApiError::UnAuthorized(msg) => (StatusCode::FORBIDDEN, msg),
-            ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
-            ApiError::InternalServerError() => (
+            ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
+            ApiError::UnAuthenticated => (
+                StatusCode::UNAUTHORIZED,
+                "You are not authenticated".to_string(),
+            ),
+            ApiError::UnAuthorized => (
+                StatusCode::FORBIDDEN,
+                "You are not authorized to access this resource".to_string(),
+            ),
+            ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
+            ApiError::InternalServerError => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                &"internal server error".to_string(),
+                "internal server error".to_string(),
             ),
         };
 

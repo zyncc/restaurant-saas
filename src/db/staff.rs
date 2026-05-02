@@ -1,4 +1,4 @@
-use sqlx::PgPool;
+use sqlx::PgExecutor;
 use uuid::Uuid;
 
 use crate::{
@@ -6,17 +6,12 @@ use crate::{
     error::ApiError,
 };
 
-pub struct StaffRepository {
-    pool: PgPool,
-}
+pub struct StaffRepository;
 
+#[allow(dead_code)]
 impl StaffRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-
     pub async fn create_staff_member(
-        &self,
+        executor: impl PgExecutor<'_>,
         data: CreateStaffMemberParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query!(
@@ -28,12 +23,15 @@ impl StaffRepository {
             data.password_hash,
             data.role,
         )
-        .execute(&self.pool)
+        .execute(executor)
         .await?;
         Ok(())
     }
 
-    pub async fn create_owner(&self, data: CreateOwnerParams) -> Result<(), sqlx::Error> {
+    pub async fn create_owner(
+        executor: impl PgExecutor<'_>,
+        data: CreateOwnerParams,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             "INSERT INTO restaurant_staff (id, name, email, password_hash, role, onboarding_step) VALUES ($1, $2, $3, $4, $5, $6)",
             data.id,
@@ -43,25 +41,28 @@ impl StaffRepository {
             "owner",
             "subscription",
         )
-        .execute(&self.pool)
+        .execute(executor)
         .await?;
         Ok(())
     }
 
-    pub async fn find_by_email(&self, email: &str) -> Result<StaffMember, sqlx::Error> {
+    pub async fn find_by_email(
+        executor: impl PgExecutor<'_>,
+        email: &str,
+    ) -> Result<StaffMember, sqlx::Error> {
         let staff = sqlx::query_as!(
             StaffMember,
             "SELECT * FROM restaurant_staff WHERE email = $1",
             email
         )
-        .fetch_one(&self.pool)
+        .fetch_one(executor)
         .await?;
 
         Ok(staff)
     }
 
     pub async fn update_onboarding_step(
-        &self,
+        executor: impl PgExecutor<'_>,
         id: Uuid,
         stripe_customer_id: &str,
         onboarding_step: &str,
@@ -75,11 +76,11 @@ impl StaffRepository {
             stripe_customer_id,
             id
         )
-        .execute(&self.pool)
+        .execute(executor)
         .await
         .map_err(|e| {
             tracing::error!("failed to update staff member: {e}");
-            ApiError::InternalServerError()
+            ApiError::InternalServerError
         })?;
         Ok(())
     }

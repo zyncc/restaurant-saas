@@ -1,40 +1,13 @@
-use sqlx::{PgConnection, PgPool, Postgres, Transaction};
+use sqlx::PgExecutor;
 
 use crate::db::models::subscription::{CreateSubscriptionDto, Subscription};
 
-pub struct SubscriptionRepository<'a> {
-    db: SubscriptionDb<'a>,
-}
+pub struct SubscriptionRepository;
 
-enum SubscriptionDb<'a> {
-    Pool(PgPool),
-    Transaction(&'a mut Transaction<'static, Postgres>),
-}
-
-impl<'a> SubscriptionRepository<'a> {
-    pub fn new(pool: PgPool) -> Self {
-        Self {
-            db: SubscriptionDb::Pool(pool),
-        }
-    }
-
-    pub fn new_with_transaction(tx: &'a mut Transaction<'static, Postgres>) -> Self {
-        Self {
-            db: SubscriptionDb::Transaction(tx),
-        }
-    }
-
-    fn get_conn(&mut self) -> &mut PgConnection {
-        match &mut self.db {
-            SubscriptionDb::Pool(pool) => panic!("use get_conn on pool directly"),
-            SubscriptionDb::Transaction(tx) => tx.as_mut(),
-        }
-    }
-
+impl SubscriptionRepository {
     pub async fn create_subscription(
-        &self,
+        executor: impl PgExecutor<'_>,
         data: CreateSubscriptionDto,
-        conn: &mut PgConnection,
     ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             "
@@ -77,21 +50,20 @@ impl<'a> SubscriptionRepository<'a> {
             data.current_period_start,
             data.current_period_end
         )
-        .execute(conn)
+        .execute(executor)
         .await?;
 
         Ok(())
     }
 
     pub async fn check_active_subscription(
-        &self,
-        conn: &mut PgConnection,
+        executor: impl PgExecutor<'_>,
     ) -> Result<Option<Subscription>, sqlx::Error> {
         let subscription = sqlx::query_as!(
             Subscription,
             "SELECT * FROM subscriptions WHERE status = 'active'"
         )
-        .fetch_optional(conn)
+        .fetch_optional(executor)
         .await?;
 
         Ok(subscription)

@@ -1,7 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use uuid::Uuid;
-
 #[derive(Debug, sqlx::FromRow, Serialize)]
 pub struct StaffMember {
     pub id: Uuid,
@@ -17,6 +16,7 @@ pub struct StaffMember {
     pub updated_at: DateTime<Utc>,
 }
 
+#[allow(dead_code)]
 pub struct CreateStaffMemberParams {
     pub id: Uuid,
     pub restaurant_id: Uuid,

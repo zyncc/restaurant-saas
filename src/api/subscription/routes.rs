@@ -35,25 +35,21 @@ pub async fn manage_subscription(
 ) -> Result<impl IntoResponse, ApiError> {
     let session_customer_id = session
         .stripe_customer_id
-        .ok_or_else(|| ApiError::UnAuthorized("you cannot access this resource".to_string()))?;
+        .ok_or_else(|| ApiError::UnAuthorized)?;
 
     if params.cust_id != session_customer_id {
-        return Err(ApiError::UnAuthorized(
-            "you cannot access this resource".to_string(),
-        ));
+        return Err(ApiError::UnAuthorized);
     }
 
     if params.cust_id != session_customer_id {
-        return Err(ApiError::UnAuthorized(
-            "you cannot access this resource".to_string(),
-        ));
+        return Err(ApiError::UnAuthorized);
     }
 
     let url = stripe::create_portal_session(&session_customer_id)
         .await
         .map_err(|e| {
             tracing::error!("failed to create portal session: {e}");
-            ApiError::InternalServerError()
+            ApiError::InternalServerError
         })?;
 
     Ok(Json(SuccessResponse::<String> {

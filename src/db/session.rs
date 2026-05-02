@@ -1,17 +1,14 @@
-use sqlx::PgPool;
+use sqlx::PgExecutor;
 
 use crate::db::models::session::{CreateStaffSessionParams, GetStaffSession};
 
-pub struct SessionRepository {
-    pool: PgPool,
-}
+pub struct SessionRepository;
 
 impl SessionRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-
-    pub async fn create_session(&self, data: CreateStaffSessionParams) -> Result<(), sqlx::Error> {
+    pub async fn create_session(
+        executor: impl PgExecutor<'_>,
+        data: CreateStaffSessionParams,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             "INSERT INTO staff_sessions (
             id,
@@ -28,25 +25,28 @@ impl SessionRepository {
             data.ip_address,
             data.user_agent
         )
-        .execute(&self.pool)
+        .execute(executor)
         .await?;
 
         Ok(())
     }
 
-    pub async fn delete_session(&self, session_token: &str) -> Result<(), sqlx::Error> {
+    pub async fn delete_session(
+        executor: impl PgExecutor<'_>,
+        session_token: &str,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             "DELETE FROM staff_sessions WHERE session_token = $1",
             session_token
         )
-        .execute(&self.pool)
+        .execute(executor)
         .await?;
 
         Ok(())
     }
 
     pub async fn fetch_staff_session(
-        &self,
+        executor: impl PgExecutor<'_>,
         session_token: &str,
     ) -> Result<Option<GetStaffSession>, sqlx::Error> {
         let session = sqlx::query_as!(
@@ -69,7 +69,7 @@ impl SessionRepository {
     WHERE session.session_token = $1 AND session.expires_at > NOW()"#,
             session_token
         )
-        .fetch_optional(&self.pool)
+        .fetch_optional(executor)
         .await?;
 
         Ok(session)

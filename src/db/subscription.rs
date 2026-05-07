@@ -4,6 +4,7 @@ use crate::db::models::subscription::{CreateSubscriptionDto, Subscription};
 
 pub struct SubscriptionRepository;
 
+#[allow(dead_code)]
 impl SubscriptionRepository {
     pub async fn create_subscription(
         executor: impl PgExecutor<'_>,

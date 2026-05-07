@@ -84,4 +84,25 @@ impl StaffRepository {
         })?;
         Ok(())
     }
+
+    pub async fn update_restaurant(
+        executor: impl PgExecutor<'_>,
+        id: Uuid,
+        restaurant_id: Uuid,
+    ) -> Result<(), ApiError> {
+        sqlx::query!(
+            "UPDATE restaurant_staff
+                     SET restaurant_id = $1, updated_at = now()
+                     WHERE id = $2",
+            restaurant_id,
+            id,
+        )
+        .execute(executor)
+        .await
+        .map_err(|e| {
+            tracing::error!("failed to update staff member: {e}");
+            ApiError::InternalServerError
+        })?;
+        Ok(())
+    }
 }

@@ -1,0 +1,9 @@
+-- +goose Up
+ALTER TABLE restaurants
+ALTER COLUMN address SET NOT NULL,
+ALTER COLUMN phone SET NOT NULL;
+
+-- +goose Down
+ALTER TABLE restaurants
+ALTER COLUMN address DROP NOT NULL,
+ALTER COLUMN phone DROP NOT NULL;

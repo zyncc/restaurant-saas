@@ -23,18 +23,18 @@ pub async fn create_checkout(
     // check if user already has an active subscription
 
     // TODO: UNCOMMENT THIS LATER
-    let subscription = SubscriptionRepository::check_active_subscription(&app.db)
-        .await
-        .map_err(|e| {
-            tracing::error!("failed to fetch active subscription: {}", e);
-            ApiError::InternalServerError
-        })?;
+    // let subscription = SubscriptionRepository::check_active_subscription(&app.db)
+    //     .await
+    //     .map_err(|e| {
+    //         tracing::error!("failed to fetch active subscription: {}", e);
+    //         ApiError::InternalServerError
+    //     })?;
 
-    if subscription.is_some() {
-        return Err(ApiError::BadRequest(
-            "you already have an active subscription".to_string(),
-        ));
-    }
+    // if subscription.is_some() {
+    //     return Err(ApiError::BadRequest(
+    //         "you already have an active subscription".to_string(),
+    //     ));
+    // }
 
     let stripe_price_id;
     let plan;

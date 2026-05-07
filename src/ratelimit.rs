@@ -19,7 +19,7 @@ pub fn strict_ratelimitter()
     Arc::new(
         GovernorConfigBuilder::default()
             .per_second(1)
-            .burst_size(1)
+            .burst_size(100)
             .key_extractor(SmartIpKeyExtractor)
             .error_handler(|err| handle_governor_error(err))
             .finish()

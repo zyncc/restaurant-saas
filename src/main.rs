@@ -5,17 +5,18 @@ mod error;
 mod middleware;
 mod ratelimit;
 mod utils;
-
-use std::net::SocketAddr;
-
 use crate::{
-    api::{auth::auth_controller, payment::payment_handler, subscription::subscription_handler},
+    api::{
+        auth::auth_controller, payment::payment_handler, restaurant::restaurant_handler,
+        subscription::subscription_handler,
+    },
     config::AppConfig,
     db::connect_to_db,
     middleware::cors::cors,
     ratelimit::strict_ratelimitter,
 };
 use axum::Router;
+use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tower_governor::GovernorLayer;
 use tracing::info;
@@ -35,6 +36,7 @@ async fn main() {
         .nest("/auth", auth_controller(app_config.clone()))
         .nest("/payment", payment_handler(app_config.clone()))
         .nest("/subscription", subscription_handler(app_config.clone()))
+        .nest("/restaurant", restaurant_handler(app_config.clone()))
         .layer(cors())
         .with_state(app_config)
         .layer(GovernorLayer {

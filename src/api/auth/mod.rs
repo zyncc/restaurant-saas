@@ -10,7 +10,7 @@ use axum::{
 use crate::{config::AppConfig, middleware::auth::auth_middleware};
 
 pub fn auth_controller(state: AppConfig) -> Router<AppConfig> {
-    let protected = Router::new()
+    let auth_routes = Router::new()
         .route("/get-session", get(routes::get_session))
         .layer(middleware::from_fn_with_state(state, auth_middleware));
 
@@ -19,5 +19,5 @@ pub fn auth_controller(state: AppConfig) -> Router<AppConfig> {
         .route("/register", post(routes::register))
         .route("/signout", post(routes::signout));
 
-    Router::new().merge(protected).merge(public)
+    Router::new().merge(auth_routes).merge(public)
 }

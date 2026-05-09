@@ -8,14 +8,14 @@ use crate::{
 
 pub struct StaffRepository;
 
-#[allow(dead_code)]
 impl StaffRepository {
     pub async fn create_staff_member(
         executor: impl PgExecutor<'_>,
         data: CreateStaffMemberParams,
-    ) -> Result<(), sqlx::Error> {
+    ) -> Result<(), ApiError> {
         sqlx::query!(
-            "INSERT INTO restaurant_staff (id, restaurant_id, name, email, password_hash, role) VALUES ($1, $2, $3, $4, $5, $6)",
+            "INSERT INTO restaurant_staff (id, restaurant_id, name, email, password_hash, role)
+             VALUES ($1, $2, $3, $4, $5, $6)",
             data.id,
             data.restaurant_id,
             data.name,
@@ -24,39 +24,59 @@ impl StaffRepository {
             data.role,
         )
         .execute(executor)
-        .await?;
+        .await
+        .map_err(|e| match &e {
+            sqlx::Error::Database(db_err) if db_err.code().as_deref() == Some("23505") => {
+                return ApiError::BadRequest(
+                    "staff member with that email already exists".to_string(),
+                );
+            }
+            _ => {
+                tracing::error!("db error: {}", e);
+                ApiError::InternalServerError
+            }
+        })?;
+
         Ok(())
     }
 
     pub async fn create_owner(
         executor: impl PgExecutor<'_>,
         data: CreateOwnerParams,
-    ) -> Result<(), sqlx::Error> {
+    ) -> Result<(), ApiError> {
         sqlx::query!(
             "INSERT INTO restaurant_staff (id, name, email, password_hash, role, onboarding_step) VALUES ($1, $2, $3, $4, $5, $6)",
             data.id,
             data.name,
             data.email,
             data.password_hash,
-            "owner",
+            "user",
             "subscription",
         )
         .execute(executor)
-        .await?;
+        .await.map_err(|e| {
+            tracing::error!("db error: {}", e);
+            ApiError::InternalServerError
+        })?;
+
         Ok(())
     }
 
     pub async fn find_by_email(
         executor: impl PgExecutor<'_>,
         email: &str,
-    ) -> Result<StaffMember, sqlx::Error> {
+    ) -> Result<StaffMember, ApiError> {
         let staff = sqlx::query_as!(
             StaffMember,
             "SELECT * FROM restaurant_staff WHERE email = $1",
             email
         )
         .fetch_one(executor)
-        .await?;
+        .await
+        .map_err(|e| {
+            tracing::error!("db error: {}", e);
+            ApiError::InternalServerError
+        })?;
 
         Ok(staff)
     }
@@ -69,11 +89,12 @@ impl StaffRepository {
     ) -> Result<(), ApiError> {
         sqlx::query!(
             "UPDATE restaurant_staff
-                     SET onboarding_step = $1, stripe_customer_id = $2, updated_at = now()
-                     WHERE id = $3
+                     SET onboarding_step = $1, stripe_customer_id = $2, role = $3, updated_at = now()
+                     WHERE id = $4
                      AND onboarding_step NOT IN ('complete', 'create_restaurant')",
             onboarding_step,
             stripe_customer_id,
+            "owner",
             id
         )
         .execute(executor)
@@ -85,7 +106,7 @@ impl StaffRepository {
         Ok(())
     }
 
-    pub async fn update_restaurant(
+    pub async fn update_restaurant_info(
         executor: impl PgExecutor<'_>,
         id: Uuid,
         restaurant_id: Uuid,

@@ -15,11 +15,19 @@ pub async fn auth_middleware(
     let token = extract_token(&req).ok_or(ApiError::UnAuthenticated)?;
 
     let session = get_session(state.db, &token).await?;
+
+    if session.role != "user"
+        && session.role != "owner"
+        && session.role != "manager"
+        && session.role != "staff"
+    {
+        return Err(ApiError::UnAuthorized);
+    }
+
     req.extensions_mut().insert(session);
     Ok(next.run(req).await)
 }
 
-#[allow(dead_code)]
 pub async fn protect_owner_route(
     State(state): State<AppConfig>,
     mut req: Request,
@@ -29,9 +37,7 @@ pub async fn protect_owner_route(
 
     let session = get_session(state.db, &token).await?;
 
-    let onboarding_incomplete = session.onboarding_step.as_deref() != Some("complete");
-
-    if session.role != "owner" || onboarding_incomplete {
+    if session.role != "owner" {
         return Err(ApiError::UnAuthorized);
     }
 
@@ -39,7 +45,6 @@ pub async fn protect_owner_route(
     Ok(next.run(req).await)
 }
 
-#[allow(dead_code)]
 pub async fn protect_manager_route(
     State(state): State<AppConfig>,
     mut req: Request,
@@ -49,7 +54,7 @@ pub async fn protect_manager_route(
 
     let session = get_session(state.db, &token).await?;
 
-    if session.role != "owner" || session.role != "manager" {
+    if session.role != "owner" && session.role != "manager" {
         return Err(ApiError::UnAuthorized);
     }
 
@@ -57,7 +62,6 @@ pub async fn protect_manager_route(
     Ok(next.run(req).await)
 }
 
-#[allow(dead_code)]
 pub async fn protect_staff_route(
     State(state): State<AppConfig>,
     mut req: Request,
@@ -67,7 +71,7 @@ pub async fn protect_staff_route(
 
     let session = get_session(state.db, &token).await?;
 
-    if session.role != "owner" || session.role != "manager" || session.role != "staff" {
+    if session.role != "owner" && session.role != "manager" && session.role != "staff" {
         return Err(ApiError::UnAuthorized);
     }
 

@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 #[derive(Debug, sqlx::FromRow)]
@@ -10,8 +11,8 @@ pub struct Restaurant {
     pub phone: String,
     pub address: String,
     pub is_active: bool,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 pub struct CreateRestaurantPayload {

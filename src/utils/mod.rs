@@ -1,6 +1,8 @@
 use axum::{extract::Request, http::header};
 
 pub mod api_responses;
+pub mod db;
+pub mod password;
 pub mod session;
 pub mod stripe;
 

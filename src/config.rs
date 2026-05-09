@@ -16,6 +16,9 @@ pub struct AppConfig {
     crate::api::payment::routes::stripe_webhook,
     crate::api::subscription::routes::manage_subscription,
     crate::api::restaurant::routes::create_restaurant,
+    crate::api::restaurant::routes::create_staff_member,
+    crate::api::restaurant::routes::create_menu_category,
+    crate::api::restaurant::routes::create_menu_item,
 ))]
 pub struct ApiDoc;
 

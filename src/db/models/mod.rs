@@ -1,3 +1,4 @@
+pub mod audit;
 pub mod restaurant;
 pub mod session;
 pub mod staff;

@@ -15,7 +15,7 @@ use crate::{
         staff::StaffRepository,
     },
     error::ApiError,
-    utils::session::generate_session_token,
+    utils::{password::hash_password, session::generate_session_token},
 };
 
 pub async fn register(app: AppConfig, body: RegisterStaffMemberRequest) -> Result<(), ApiError> {
@@ -37,18 +37,7 @@ pub async fn register(app: AppConfig, body: RegisterStaffMemberRequest) -> Resul
     }
 
     // hash password using argon2
-    let raw_password = body.password.as_bytes();
-    let salt = SaltString::generate(&mut OsRng);
-
-    let argon2 = Argon2::default();
-
-    let hashed_password = argon2
-        .hash_password(raw_password, &salt)
-        .map_err(|e| {
-            tracing::error!("failed to hash password: {}", e);
-            return ApiError::InternalServerError;
-        })?
-        .to_string();
+    let hashed_password = hash_password(&body.password)?;
 
     let owner = CreateOwnerParams {
         id: Uuid::new_v4(),
@@ -93,15 +82,7 @@ pub async fn login(
         }
     }
 
-    let find_staff = StaffRepository::find_by_email(&app.db, &body.email)
-        .await
-        .map_err(|e| match e {
-            sqlx::Error::RowNotFound => ApiError::BadRequest("invalid credentials".to_string()),
-            e => {
-                tracing::error!("failed to fetch staff member by email: {}", e);
-                ApiError::InternalServerError
-            }
-        })?;
+    let find_staff = StaffRepository::find_by_email(&app.db, &body.email).await?;
 
     // compare password with hashed password
     let parsed_hash = PasswordHash::new(&find_staff.password_hash).map_err(|e| {

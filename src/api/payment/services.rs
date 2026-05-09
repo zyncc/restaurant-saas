@@ -23,18 +23,18 @@ pub async fn create_checkout(
     // check if user already has an active subscription
 
     // TODO: UNCOMMENT THIS LATER
-    // let subscription = SubscriptionRepository::check_active_subscription(&app.db)
-    //     .await
-    //     .map_err(|e| {
-    //         tracing::error!("failed to fetch active subscription: {}", e);
-    //         ApiError::InternalServerError
-    //     })?;
+    let subscription = SubscriptionRepository::check_active_subscription(&app.db)
+        .await
+        .map_err(|e| {
+            tracing::error!("failed to fetch active subscription: {}", e);
+            ApiError::InternalServerError
+        })?;
 
-    // if subscription.is_some() {
-    //     return Err(ApiError::BadRequest(
-    //         "you already have an active subscription".to_string(),
-    //     ));
-    // }
+    if subscription.is_some() {
+        return Err(ApiError::BadRequest(
+            "you already have an active subscription".to_string(),
+        ));
+    }
 
     let stripe_price_id;
     let plan;
@@ -129,6 +129,7 @@ pub async fn stripe_webhook(
     app: AppConfig,
     body: InvoicePaymentSucceededPayload,
 ) -> Result<(), ApiError> {
+    // TODO validate stripe signature
     let data = CreateSubscriptionDto {
         id: Uuid::new_v4(),
         staff_id: Uuid::from_str(
@@ -204,11 +205,7 @@ pub async fn stripe_webhook(
         &body.data.object.customer,
         "create_restaurant",
     )
-    .await
-    .map_err(|e| {
-        tracing::error!("failed to update staff details: {}", e);
-        ApiError::InternalServerError
-    })?;
+    .await?;
 
     tx.commit().await.map_err(|e| {
         tracing::error!("create / update subscription transaction failed: {e}");

@@ -97,7 +97,7 @@ CREATE TABLE
         id UUID PRIMARY KEY,
         restaurant_id UUID NOT NULL REFERENCES restaurants (id) ON DELETE CASCADE,
         name TEXT NOT NULL,
-        description TEXT,
+        description TEXT NOT NULL,
         sort_order INTEGER NOT NULL DEFAULT 0,
         is_active BOOLEAN NOT NULL DEFAULT true,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now ()
@@ -111,10 +111,9 @@ CREATE TABLE
         name TEXT NOT NULL,
         description TEXT,
         price NUMERIC(10, 2) NOT NULL,
-        image_url TEXT,
+        image_url TEXT NOT NULL,
         is_available BOOLEAN NOT NULL DEFAULT true,
-        is_vegetarian BOOLEAN NOT NULL DEFAULT false,
-        is_vegan BOOLEAN NOT NULL DEFAULT false,
+        food_type TEXT NOT NULL CHECK (food_type IN ('veg', 'nonveg', 'egg')),
         sort_order INTEGER NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now (),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now ()

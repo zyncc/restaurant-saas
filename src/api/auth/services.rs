@@ -1,5 +1,4 @@
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::SaltString};
-use rand::rngs::OsRng;
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use uuid::Uuid;
 use validator::Validate;
 

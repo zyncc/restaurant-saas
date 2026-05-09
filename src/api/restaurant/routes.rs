@@ -3,7 +3,10 @@ use uuid::Uuid;
 
 use crate::{
     api::restaurant::{
-        dto::{CreateRestaurantRequest, CreateStaffMemberRequest},
+        dto::{
+            CreateMenuCategoryRequest, CreateMenuItemRequest, CreateRestaurantRequest,
+            CreateStaffMemberRequest,
+        },
         services,
     },
     config::AppConfig,
@@ -72,7 +75,7 @@ pub async fn create_staff_member(
     post,
     path = "/restaurant/menu-categories",
     description = "Create New Menu categories for the restaurant",
-    request_body = CreateStaffMemberRequest,
+    request_body = CreateMenuCategoryRequest,
     params(("Authorization" = String, Header, description = "Bearer token for authentication")),
     responses(
         (status = OK, body = SuccessResponse<String>),
@@ -82,7 +85,7 @@ pub async fn create_staff_member(
 pub async fn create_menu_category(
     Extension(session): Extension<GetStaffSession>,
     State(app): State<AppConfig>,
-    Json(body): Json<CreateStaffMemberRequest>,
+    Json(body): Json<CreateMenuCategoryRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
     let category_id = services::create_menu_category(app, session, body).await?;
 
@@ -100,7 +103,7 @@ pub async fn create_menu_category(
     post,
     path = "/restaurant/menu-item",
     description = "Create New Menu item for a menu category",
-    request_body = CreateStaffMemberRequest,
+    request_body = CreateMenuItemRequest,
     params(("Authorization" = String, Header, description = "Bearer token for authentication")),
     responses(
         (status = OK, body = SuccessResponse<String>),
@@ -110,7 +113,7 @@ pub async fn create_menu_category(
 pub async fn create_menu_item(
     Extension(session): Extension<GetStaffSession>,
     State(app): State<AppConfig>,
-    Json(body): Json<CreateStaffMemberRequest>,
+    Json(body): Json<CreateMenuItemRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
     let item_id = services::create_menu_item(app, session, body).await?;
 

@@ -1,11 +1,15 @@
 use uuid::Uuid;
 
 use crate::{
-    api::restaurant::dto::{CreateRestaurantRequest, CreateStaffMemberRequest},
+    api::restaurant::dto::{
+        CreateMenuCategoryRequest, CreateMenuItemRequest, CreateRestaurantRequest,
+        CreateStaffMemberRequest,
+    },
     config::AppConfig,
     db::{
         models::{
-            restaurant::CreateRestaurantPayload, session::GetStaffSession,
+            restaurant::{CreateMenuCategoryParams, CreateMenuItemParams, CreateRestaurantParams},
+            session::GetStaffSession,
             staff::CreateStaffMemberParams,
         },
         restaurant::RestaurantRepository,
@@ -21,7 +25,7 @@ pub async fn create_restaurant(
     body: CreateRestaurantRequest,
 ) -> Result<Uuid, ApiError> {
     let restaurant_id = Uuid::new_v4();
-    let payload = CreateRestaurantPayload {
+    let payload = CreateRestaurantParams {
         id: restaurant_id,
         name: body.name,
         address: body.address,
@@ -62,8 +66,8 @@ pub async fn create_restaurant(
             &app.db,
             restaurant_id,
             session.id,
-            session.name.clone(),
-            session.role.clone(),
+            session.name,
+            session.role,
             "restaurant.created".to_string(),
             "restaurant".to_string(),
         )
@@ -108,8 +112,8 @@ pub async fn create_staff_member(
             &app.db,
             session.restaurant_id.unwrap(),
             session.id,
-            session.name.clone(),
-            session.role.clone(),
+            session.name,
+            session.role,
             "member.created".to_string(),
             "staff".to_string(),
         )
@@ -122,15 +126,69 @@ pub async fn create_staff_member(
 pub async fn create_menu_category(
     app: AppConfig,
     session: GetStaffSession,
-    body: CreateStaffMemberRequest,
+    body: CreateMenuCategoryRequest,
 ) -> Result<Uuid, ApiError> {
-    Ok(Uuid::new_v4())
+    let category_id = Uuid::new_v4();
+    let payload = CreateMenuCategoryParams {
+        id: category_id,
+        restaurant_id: body.restaurant_id,
+        name: body.name,
+        description: body.description,
+        sort_order: body.sort_order,
+        is_active: body.is_active,
+    };
+
+    RestaurantRepository::create_menu_category(&app.db, payload).await?;
+
+    tokio::spawn(async move {
+        create_audit_log(
+            &app.db,
+            session.restaurant_id.unwrap(),
+            session.id,
+            session.name,
+            session.role,
+            "menu.category.created".to_string(),
+            "menu".to_string(),
+        )
+        .await
+    });
+
+    Ok(category_id)
 }
 
 pub async fn create_menu_item(
     app: AppConfig,
     session: GetStaffSession,
-    body: CreateStaffMemberRequest,
+    body: CreateMenuItemRequest,
 ) -> Result<Uuid, ApiError> {
-    Ok(Uuid::new_v4())
+    let item_id = Uuid::new_v4();
+    let payload = CreateMenuItemParams {
+        id: item_id,
+        restaurant_id: body.restaurant_id,
+        category_id: body.category_id,
+        name: body.name,
+        price: body.price,
+        description: body.description,
+        food_type: body.food_type,
+        image_url: body.image_url,
+        is_available: body.is_available,
+        sort_order: body.sort_order,
+    };
+
+    RestaurantRepository::create_menu_item(&app.db, payload).await?;
+
+    tokio::spawn(async move {
+        create_audit_log(
+            &app.db,
+            session.restaurant_id.unwrap(),
+            session.id,
+            session.name,
+            session.role,
+            "menu.item.created".to_string(),
+            "menu".to_string(),
+        )
+        .await
+    });
+
+    Ok(item_id)
 }

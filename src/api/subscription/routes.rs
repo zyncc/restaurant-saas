@@ -2,12 +2,10 @@ use axum::{Extension, Json, extract::Query, response::IntoResponse};
 use serde::Deserialize;
 
 use crate::{
+    api::subscription::services,
     db::models::session::GetStaffSession,
     error::ApiError,
-    utils::{
-        api_responses::{ErrorResponse, SuccessResponse},
-        stripe,
-    },
+    utils::api_responses::{ErrorResponse, SuccessResponse},
 };
 
 #[derive(Deserialize)]
@@ -45,12 +43,7 @@ pub async fn manage_subscription(
         return Err(ApiError::UnAuthorized);
     }
 
-    let url = stripe::create_portal_session(&session_customer_id)
-        .await
-        .map_err(|e| {
-            tracing::error!("failed to create portal session: {e}");
-            ApiError::InternalServerError
-        })?;
+    let url = services::create_portal_session(&session_customer_id).await?;
 
     Ok(Json(SuccessResponse::<String> {
         success: true,

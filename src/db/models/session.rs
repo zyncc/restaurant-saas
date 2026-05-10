@@ -4,7 +4,6 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 #[derive(Debug, sqlx::FromRow, Serialize)]
-#[allow(dead_code)]
 pub struct StaffSession {
     pub id: Uuid,
     pub staff_id: Uuid,

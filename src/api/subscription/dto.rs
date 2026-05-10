@@ -2,7 +2,6 @@ use chrono::{DateTime, Utc};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
-#[allow(dead_code)]
 pub struct SubscriptionResponse {
     pub id: String,
     pub user_id: String,

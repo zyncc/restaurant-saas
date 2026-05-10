@@ -89,6 +89,9 @@ impl RestaurantRepository {
         .execute(executor)
         .await
         .map_err(|e| {
+            if e.to_string().contains("unique constraint") {
+                return ApiError::BadRequest("table already exists".to_string());
+            }
             tracing::error!("db error: {e}");
             ApiError::InternalServerError
         })?;

@@ -17,6 +17,7 @@ pub struct CreateStaffMemberRequest {
     pub restaurant_id: Uuid,
     pub name: String,
     pub email: String,
+    pub phone: String,
     pub password: String,
     pub role: String,
 }

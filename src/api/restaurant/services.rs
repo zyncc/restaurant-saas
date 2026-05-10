@@ -101,6 +101,7 @@ pub async fn create_staff_member(
         id: staff_id,
         name: body.name,
         email: body.email,
+        phone: body.phone,
         password_hash: hashed_password,
         role: body.role,
         restaurant_id: body.restaurant_id,

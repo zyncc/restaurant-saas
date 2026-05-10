@@ -42,22 +42,12 @@ pub async fn register(app: AppConfig, body: RegisterStaffMemberRequest) -> Resul
         id: Uuid::new_v4(),
         name: body.name,
         email: body.email,
+        phone: body.phone,
         password_hash: hashed_password,
     };
 
-    StaffRepository::create_owner(&app.db, owner)
-        .await
-        .map_err(|e| {
-            if e.to_string().contains("violates unique constraint") {
-                return ApiError::BadRequest(
-                    "user with these credentials already exists".to_string(),
-                );
-            }
-            tracing::error!("failed to insert staff member to db, {}", e);
-            ApiError::InternalServerError
-        })?;
+    StaffRepository::create_owner(&app.db, owner).await?;
 
-    tracing::info!("registered staff member");
     Ok(())
 }
 
@@ -69,19 +59,16 @@ pub async fn login(
     existing_session: Option<String>,
 ) -> Result<String, ApiError> {
     if let Some(token) = existing_session {
-        let session = SessionRepository::fetch_staff_session(&app.db, &token)
-            .await
-            .map_err(|e| {
-                tracing::error!("failed to fetch staff session: {}", e);
-                ApiError::InternalServerError
-            })?;
+        let session = SessionRepository::fetch_staff_session(&app.db, &token).await?;
 
         if session.is_some() {
             return Err(ApiError::BadRequest("already logged in".to_string()));
         }
     }
 
-    let find_staff = StaffRepository::find_by_email(&app.db, &body.email).await?;
+    let find_staff = StaffRepository::find_by_email(&app.db, &body.email)
+        .await?
+        .ok_or_else(|| ApiError::BadRequest("invalid credentials".to_string()))?;
 
     // compare password with hashed password
     let parsed_hash = PasswordHash::new(&find_staff.password_hash).map_err(|e| {
@@ -104,25 +91,13 @@ pub async fn login(
         user_agent: Some(user_agent),
     };
 
-    SessionRepository::create_session(&app.db, session)
-        .await
-        .map_err(|e| {
-            tracing::error!("failed to create database user session: {}", e);
-            ApiError::InternalServerError
-        })?;
+    SessionRepository::create_session(&app.db, session).await?;
 
-    tracing::info!("user {} logged in successfully", find_staff.id);
     Ok(session_token)
 }
 
 pub async fn signout(app: AppConfig, session_token: &str) -> Result<(), ApiError> {
-    SessionRepository::delete_session(&app.db, session_token)
-        .await
-        .map_err(|e| {
-            tracing::error!("failed to delete session: {}", e);
-            ApiError::InternalServerError
-        })?;
-
+    SessionRepository::delete_session(&app.db, session_token).await?;
     Ok(())
 }
 

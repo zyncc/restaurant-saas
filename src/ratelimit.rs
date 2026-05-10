@@ -19,8 +19,8 @@ pub fn strict_ratelimiter()
 -> Arc<GovernorConfig<SmartIpKeyExtractor, NoOpMiddleware<QuantaInstant>>> {
     Arc::new(
         GovernorConfigBuilder::default()
-            .period(Duration::from_secs(60 / 5)) // 5 requests per minute
-            .burst_size(5)
+            .period(Duration::from_secs(60 / 50)) // 5 requests per minute
+            .burst_size(50)
             .key_extractor(SmartIpKeyExtractor)
             .error_handler(handle_governor_error)
             .finish()

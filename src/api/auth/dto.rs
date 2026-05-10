@@ -9,6 +9,7 @@ pub struct RegisterStaffMemberRequest {
 
     #[validate(email(message = "invalid email address"))]
     pub email: String,
+    pub phone: String,
 
     // #[validate(regex(
     //     path = "*PASSWORD_REGEX",

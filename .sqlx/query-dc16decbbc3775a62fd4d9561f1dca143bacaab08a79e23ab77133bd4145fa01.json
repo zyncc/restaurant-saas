@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO audit_logs (\n            id,\n            restaurant_id,\n            staff_id,\n            staff_name,\n            staff_role,\n            action,\n            entity\n            ) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "dc16decbbc3775a62fd4d9561f1dca143bacaab08a79e23ab77133bd4145fa01"
+}

@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO menu_categories\n            (id, restaurant_id, name, description, sort_order, is_active)\n            VALUES ($1, $2, $3, $4, $5, $6)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Int4",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b4ff1b682627a8862dbf4c717dd7d8c561d2dce593647f2ef7321c4c43bbaaaf"
+}

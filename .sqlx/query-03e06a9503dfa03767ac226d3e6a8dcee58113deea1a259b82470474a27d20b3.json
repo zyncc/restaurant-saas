@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n    staff.id,\n    staff.restaurant_id,\n    staff.name,\n    staff.email,\n    staff.role,\n    staff.onboarding_step,\n    staff.is_active,\n    staff.stripe_customer_id,\n    sub.plan as \"sub_plan?\",\n    sub.status as \"sub_status?\",\n    sub.current_period_end as \"sub_current_period_end?\"\n    FROM staff_sessions as session\n    JOIN restaurant_staff as staff ON staff.id = session.staff_id\n    LEFT JOIN subscriptions as sub ON sub.staff_id = staff.id\n    WHERE session.session_token = $1 AND session.expires_at > NOW()",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "restaurant_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "role",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "onboarding_step",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "stripe_customer_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "sub_plan?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "sub_status?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "sub_current_period_end?",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "03e06a9503dfa03767ac226d3e6a8dcee58113deea1a259b82470474a27d20b3"
+}

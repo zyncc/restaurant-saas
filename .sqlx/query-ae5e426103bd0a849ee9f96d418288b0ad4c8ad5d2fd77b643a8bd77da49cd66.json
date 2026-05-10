@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE restaurant_staff\n                     SET onboarding_step = $1, stripe_customer_id = $2, role = $3, updated_at = now()\n                     WHERE id = $4\n                     AND onboarding_step NOT IN ('complete', 'create_restaurant')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ae5e426103bd0a849ee9f96d418288b0ad4c8ad5d2fd77b643a8bd77da49cd66"
+}

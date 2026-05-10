@@ -116,7 +116,7 @@ pub async fn login(
 }
 
 pub async fn signout(app: AppConfig, session_token: &str) -> Result<(), ApiError> {
-    SessionRepository::delete_session(&app.db, &session_token)
+    SessionRepository::delete_session(&app.db, session_token)
         .await
         .map_err(|e| {
             tracing::error!("failed to delete session: {}", e);
@@ -127,5 +127,6 @@ pub async fn signout(app: AppConfig, session_token: &str) -> Result<(), ApiError
 }
 
 pub async fn get_session(session: GetStaffSession) -> Result<GetStaffSession, ApiError> {
+    tracing::info!("USER SESSION FETCHED");
     Ok(session)
 }

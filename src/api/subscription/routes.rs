@@ -31,9 +31,7 @@ pub async fn manage_subscription(
     Extension(session): Extension<GetStaffSession>,
     Query(params): Query<ManageSubscriptionParams>,
 ) -> Result<impl IntoResponse, ApiError> {
-    let session_customer_id = session
-        .stripe_customer_id
-        .ok_or_else(|| ApiError::UnAuthorized)?;
+    let session_customer_id = session.stripe_customer_id.ok_or(ApiError::UnAuthorized)?;
 
     if params.cust_id != session_customer_id {
         return Err(ApiError::UnAuthorized);

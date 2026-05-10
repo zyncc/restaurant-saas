@@ -22,7 +22,7 @@ fn hash_token(token: &str) -> String {
 }
 
 pub async fn get_session(db: PgPool, token: &str) -> Result<GetStaffSession, ApiError> {
-    let session = SessionRepository::fetch_staff_session(&db, &token)
+    let session = SessionRepository::fetch_staff_session(&db, token)
         .await
         .map_err(|e| {
             tracing::error!("Failed to fetch session: {}", e);

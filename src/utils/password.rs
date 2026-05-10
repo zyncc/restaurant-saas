@@ -13,7 +13,7 @@ pub fn hash_password(password: &str) -> Result<String, ApiError> {
         .hash_password(raw_password, &salt)
         .map_err(|e| {
             tracing::error!("failed to hash password: {}", e);
-            return ApiError::InternalServerError;
+            ApiError::InternalServerError
         })?
         .to_string())
 }

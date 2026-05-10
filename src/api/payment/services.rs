@@ -1,6 +1,3 @@
-use std::str::FromStr;
-
-use chrono::DateTime;
 use uuid::Uuid;
 
 use crate::{
@@ -12,7 +9,7 @@ use crate::{
         subscription::SubscriptionRepository,
     },
     error::ApiError,
-    utils::stripe::{self, types::invoice_payment_succeeded::InvoicePaymentSucceededPayload},
+    utils::stripe::{self, types::subscription_created::SubscriptionCreated},
 };
 
 pub async fn create_checkout(
@@ -125,55 +122,25 @@ pub async fn create_checkout(
     Ok(checkout_url)
 }
 
-pub async fn stripe_webhook(
+pub async fn webhook_subscription_created(
     app: AppConfig,
-    body: InvoicePaymentSucceededPayload,
+    event: SubscriptionCreated,
 ) -> Result<(), ApiError> {
-    // TODO validate stripe signature
+    let staff_id = event.data.object.metadata.user_id;
+
     let data = CreateSubscriptionDto {
         id: Uuid::new_v4(),
-        staff_id: Uuid::from_str(
-            &body
-                .data
-                .object
-                .parent
-                .subscription_details
-                .metadata
-                .user_id,
-        )
-        .map_err(|e| {
-            tracing::error!("failed to parse user_id as UUID: {}", e);
-            ApiError::BadRequest("failed to parse uuid".to_string())
-        })?,
-        stripe_subscription_id: body.data.object.parent.subscription_details.subscription,
-        stripe_customer_id: body.data.object.customer.clone(),
-        stripe_price_id: body.data.object.lines.data[0]
-            .pricing
-            .price_details
-            .price
-            .clone(),
-        plan: body.data.object.parent.subscription_details.metadata.plan,
-        duration: body
-            .data
-            .object
-            .parent
-            .subscription_details
-            .metadata
-            .duration,
+        staff_id: staff_id,
+        stripe_subscription_id: event.data.object.items.data[0].subscription.clone(),
+        stripe_customer_id: event.data.object.customer.clone(),
+        stripe_price_id: event.data.object.items.data[0].price.id.clone(),
+        plan: event.data.object.metadata.plan.clone(),
+        duration: event.data.object.metadata.duration.clone(),
         status: "active".to_string(),
-        current_period_start: DateTime::from_timestamp(
-            body.data.object.lines.data[0].period.start,
-            0,
-        )
-        .ok_or_else(|| {
-            tracing::error!("failed to parse current_period_start");
-            ApiError::BadRequest("failed to parse timestamp".to_string())
-        })?,
-        current_period_end: DateTime::from_timestamp(body.data.object.lines.data[0].period.end, 0)
-            .ok_or_else(|| {
-                tracing::error!("failed to parse current_period_end");
-                ApiError::BadRequest("failed to parse timestamp".to_string())
-            })?,
+        current_period_start: event.data.object.items.data[0].current_period_start,
+        current_period_end: event.data.object.items.data[0].current_period_end,
+        trial_started_at: event.data.object.trial_start,
+        trial_ends_at: event.data.object.trial_end,
     };
 
     let mut tx = app.db.begin().await.map_err(|e| {
@@ -188,21 +155,10 @@ pub async fn stripe_webhook(
             ApiError::InternalServerError
         })?;
 
-    let user_id = &body
-        .data
-        .object
-        .parent
-        .subscription_details
-        .metadata
-        .user_id;
-
     StaffRepository::update_onboarding_step(
         &mut *tx,
-        Uuid::from_str(user_id).map_err(|e| {
-            tracing::error!("failed to parse user_id as UUID: {}", e);
-            ApiError::BadRequest("failed to parse uuid".to_string())
-        })?,
-        &body.data.object.customer,
+        staff_id,
+        &event.data.object.customer,
         "create_restaurant",
     )
     .await?;
@@ -212,5 +168,5 @@ pub async fn stripe_webhook(
         ApiError::InternalServerError
     })?;
 
-    return Ok(());
+    Ok(())
 }

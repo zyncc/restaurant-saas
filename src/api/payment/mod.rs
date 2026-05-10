@@ -13,7 +13,10 @@ pub fn payment_handler(state: AppConfig) -> Router<AppConfig> {
             .layer(middleware::from_fn_with_state(state, auth_middleware)),
     );
 
-    let public_routes = Router::new().route("/webhook/stripe", post(routes::stripe_webhook));
+    let public_routes = Router::new().route(
+        "/webhook/subscription-created",
+        post(routes::webhook_subscription_created),
+    );
 
     Router::new().merge(auth_routes).merge(public_routes)
 }

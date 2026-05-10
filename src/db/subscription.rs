@@ -12,7 +12,7 @@ impl SubscriptionRepository {
     ) -> Result<(), sqlx::Error> {
         sqlx::query!(
             "
-    INSERT INTO subscriptions (
+        INSERT INTO subscriptions (
         id,
         staff_id,
         stripe_subscription_id,
@@ -22,24 +22,10 @@ impl SubscriptionRepository {
         duration,
         status,
         current_period_start,
-        current_period_end
-    ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-    )
-    ON CONFLICT (staff_id) DO UPDATE SET
-        stripe_subscription_id = EXCLUDED.stripe_subscription_id,
-        stripe_customer_id     = EXCLUDED.stripe_customer_id,
-        stripe_price_id        = EXCLUDED.stripe_price_id,
-        plan                   = EXCLUDED.plan,
-        duration               = EXCLUDED.duration,
-        status                 = EXCLUDED.status,
-        current_period_start   = EXCLUDED.current_period_start,
-        current_period_end     = EXCLUDED.current_period_end,
-        cancel_at              = NULL,
-        cancelled_at           = NULL,
-        ended_at               = NULL,
-        updated_at             = now()
-    ",
+        current_period_end,
+        trial_started_at,
+        trial_ends_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
             data.id,
             data.staff_id,
             data.stripe_subscription_id,
@@ -49,7 +35,9 @@ impl SubscriptionRepository {
             data.duration,
             data.status,
             data.current_period_start,
-            data.current_period_end
+            data.current_period_end,
+            data.trial_started_at,
+            data.trial_ends_at,
         )
         .execute(executor)
         .await?;

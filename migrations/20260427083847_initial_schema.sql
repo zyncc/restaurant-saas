@@ -21,6 +21,8 @@ CREATE TABLE
         restaurant_id UUID REFERENCES restaurants (id) ON DELETE CASCADE,
         name TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
+        phone TEXT UNIQUE NOT NULL,
+        phone_verified BOOLEAN NOT NULL DEFAULT false,
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL CHECK (role IN ('owner', 'manager', 'staff', 'user')),
         onboarding_step TEXT CHECK (
@@ -44,18 +46,18 @@ CREATE TABLE
     subscriptions (
         id UUID PRIMARY KEY,
         staff_id UUID NOT NULL UNIQUE REFERENCES restaurant_staff (id) ON DELETE CASCADE,
-        stripe_subscription_id TEXT UNIQUE,
-        stripe_customer_id TEXT,
-        stripe_price_id TEXT,
+        stripe_subscription_id TEXT NOT NULL UNIQUE,
+        stripe_customer_id TEXT NOT NULL,
+        stripe_price_id TEXT NOT NULL,
         plan TEXT NOT NULL CHECK (plan IN ('basic', 'pro')),
-        duration TEXT CHECK (duration IN ('1-month', '1-year')),
+        duration TEXT NOT NULL CHECK (duration IN ('1-month', '1-year')),
         status TEXT NOT NULL CHECK (
             status IN ('active', 'trialing', 'past_due', 'cancelled')
         ),
         trial_started_at TIMESTAMPTZ,
         trial_ends_at TIMESTAMPTZ,
-        current_period_start TIMESTAMPTZ,
-        current_period_end TIMESTAMPTZ,
+        current_period_start TIMESTAMPTZ NOT NULL,
+        current_period_end TIMESTAMPTZ NOT NULL,
         cancel_at TIMESTAMPTZ,
         cancelled_at TIMESTAMPTZ,
         ended_at TIMESTAMPTZ,
@@ -196,40 +198,40 @@ CREATE INDEX idx_audit_logs_created_at ON audit_logs (created_at DESC);
 -- +goose StatementEnd
 -- +goose Down
 -- +goose StatementBegin
--- DROP INDEX IF EXISTS idx_audit_logs_created_at;
--- DROP INDEX IF EXISTS idx_audit_logs_staff;
--- DROP INDEX IF EXISTS idx_audit_logs_restaurant;
--- DROP INDEX IF EXISTS idx_order_items_order;
--- DROP INDEX IF EXISTS idx_orders_table_session;
--- DROP INDEX IF EXISTS idx_orders_restaurant;
--- DROP INDEX IF EXISTS idx_menu_items_category;
--- DROP INDEX IF EXISTS idx_menu_items_restaurant;
--- DROP INDEX IF EXISTS idx_table_sessions_restaurant;
--- DROP INDEX IF EXISTS idx_table_sessions_table;
--- DROP INDEX IF EXISTS idx_tables_restaurant;
--- DROP INDEX IF EXISTS idx_restaurant_staff_restaurant;
+DROP INDEX IF EXISTS idx_audit_logs_created_at;
+DROP INDEX IF EXISTS idx_audit_logs_staff;
+DROP INDEX IF EXISTS idx_audit_logs_restaurant;
+DROP INDEX IF EXISTS idx_order_items_order;
+DROP INDEX IF EXISTS idx_orders_table_session;
+DROP INDEX IF EXISTS idx_orders_restaurant;
+DROP INDEX IF EXISTS idx_menu_items_category;
+DROP INDEX IF EXISTS idx_menu_items_restaurant;
+DROP INDEX IF EXISTS idx_table_sessions_restaurant;
+DROP INDEX IF EXISTS idx_table_sessions_table;
+DROP INDEX IF EXISTS idx_tables_restaurant;
+DROP INDEX IF EXISTS idx_restaurant_staff_restaurant;
 
--- DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS audit_logs;
 
--- DROP TABLE IF EXISTS order_items;
+DROP TABLE IF EXISTS order_items;
 
--- DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS orders;
 
--- DROP TABLE IF EXISTS menu_items;
+DROP TABLE IF EXISTS menu_items;
 
--- DROP TABLE IF EXISTS menu_categories;
+DROP TABLE IF EXISTS menu_categories;
 
--- DROP TABLE IF EXISTS table_sessions;
+DROP TABLE IF EXISTS table_sessions;
 
--- DROP TABLE IF EXISTS staff_sessions;
+DROP TABLE IF EXISTS staff_sessions;
 
--- DROP TABLE IF EXISTS tables;
+DROP TABLE IF EXISTS tables;
 
--- DROP TABLE IF EXISTS subscriptions;
+DROP TABLE IF EXISTS subscriptions;
 
--- DROP TABLE IF EXISTS customers;
+DROP TABLE IF EXISTS customers;
 
--- DROP TABLE IF EXISTS restaurant_staff;
+DROP TABLE IF EXISTS restaurant_staff;
 
--- DROP TABLE IF EXISTS restaurants;
+DROP TABLE IF EXISTS restaurants;
 -- +goose StatementEnd

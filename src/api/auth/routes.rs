@@ -35,9 +35,7 @@ pub async fn register(
     State(app): State<AppConfig>,
     Json(body): Json<RegisterStaffMemberRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
-    if let Err(e) = services::register(app, body).await {
-        return Err(e);
-    };
+    services::register(app, body).await?;
 
     Ok(Json(SuccessResponse::<()> {
         success: true,
@@ -72,9 +70,7 @@ pub async fn login(
 
     let existing_token = jar.get("session_token").map(|c| c.value().to_string());
 
-    let session_token = services::login(app, body, ip_address, user_agent, existing_token)
-        .await
-        .map_err(|e| e)?;
+    let session_token = services::login(app, body, ip_address, user_agent, existing_token).await?;
 
     let cookie = Cookie::build(("session_token", session_token))
         .path("/")
@@ -110,11 +106,12 @@ pub async fn signout(
     let session_token = jar
         .get("session_token")
         .map(|c| c.value().to_string())
-        .ok_or_else(|| ApiError::UnAuthenticated)?;
+        .ok_or(ApiError::UnAuthenticated)?;
 
     services::signout(app, &session_token).await?;
 
     let cookie = Cookie::build(("session_token", ""))
+        .domain(".localhost")
         .path("/")
         .http_only(true)
         .secure(true)

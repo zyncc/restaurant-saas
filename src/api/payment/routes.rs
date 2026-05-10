@@ -1,4 +1,5 @@
-use axum::{Extension, Json, extract::State, response::IntoResponse};
+use axum::{Extension, Json, extract::State, http::HeaderMap, response::IntoResponse};
+use bytes::Bytes;
 
 use crate::{
     api::payment::{dto::CreateCheckoutSessionRequest, services},
@@ -7,7 +8,7 @@ use crate::{
     error::ApiError,
     utils::{
         api_responses::{ErrorResponse, SuccessResponse},
-        stripe::types::invoice_payment_succeeded::InvoicePaymentSucceededPayload,
+        stripe::{types::subscription_created::SubscriptionCreated, validate_stripe_signature},
     },
 };
 
@@ -37,19 +38,42 @@ pub async fn create_stripe_checkout(
 
 #[utoipa::path(
     post,
-    path = "/payment/webhook/stripe",
-    description = "Handle Stripe webhook events",
-    request_body = InvoicePaymentSucceededPayload,
+    path = "/payment/webhook/subscription-created",
+    description = "Webhook for customer.subscription.created Event",
+    request_body = SubscriptionCreated,
     responses(
         (status = OK, body = SuccessResponse<String>),
         (status = INTERNAL_SERVER_ERROR, body = ErrorResponse),
     )
 )]
-pub async fn stripe_webhook(
+pub async fn webhook_subscription_created(
     State(app): State<AppConfig>,
-    Json(body): Json<InvoicePaymentSucceededPayload>,
+    headers: HeaderMap,
+    body: Bytes,
 ) -> Result<impl IntoResponse, ApiError> {
-    services::stripe_webhook(app, body).await?;
+    // validate stripe signature
+    let sig = headers
+        .get("stripe-signature")
+        .and_then(|v| v.to_str().ok())
+        .ok_or(ApiError::BadRequest(
+            "missing Stripe-Signature header".to_string(),
+        ))?;
+
+    if !validate_stripe_signature(
+        &body,
+        sig,
+        std::env::var("STRIPE_WEBHOOK_SECRET").unwrap().as_str(),
+        300,
+    ) {
+        return Err(ApiError::UnAuthorized);
+    }
+
+    let event: SubscriptionCreated = serde_json::from_slice(&body).map_err(|e| {
+        tracing::error!("error deserializing : {e}");
+        ApiError::BadRequest("".to_string())
+    })?;
+
+    services::webhook_subscription_created(app, event).await?;
 
     Ok(Json(SuccessResponse::<()> {
         success: true,

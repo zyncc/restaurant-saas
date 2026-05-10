@@ -27,9 +27,7 @@ impl StaffRepository {
         .await
         .map_err(|e| match &e {
             sqlx::Error::Database(db_err) if db_err.code().as_deref() == Some("23505") => {
-                return ApiError::BadRequest(
-                    "staff member with that email already exists".to_string(),
-                );
+                ApiError::BadRequest("staff member with that email already exists".to_string())
             }
             _ => {
                 tracing::error!("db error: {}", e);
@@ -113,7 +111,7 @@ impl StaffRepository {
     ) -> Result<(), ApiError> {
         sqlx::query!(
             "UPDATE restaurant_staff
-                     SET restaurant_id = $1, updated_at = now()
+                     SET restaurant_id = $1, onboarding_step = 'complete', updated_at = now()
                      WHERE id = $2",
             restaurant_id,
             id,

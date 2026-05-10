@@ -41,9 +41,8 @@ pub async fn create_restaurant(
     // check if owner already has a restaurant
     let find_restaurant_id = session.restaurant_id;
 
-    if find_restaurant_id.is_some() {
-        let find_restaurant =
-            RestaurantRepository::get_by_id(&app.db, find_restaurant_id.unwrap()).await?;
+    if let Some(restaurant_id) = find_restaurant_id {
+        let find_restaurant = RestaurantRepository::get_by_id(&app.db, restaurant_id).await?;
         if find_restaurant.is_some() {
             tracing::debug!("owner already has a restaurant");
             return Err(ApiError::BadRequest(

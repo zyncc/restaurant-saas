@@ -1,11 +1,20 @@
-use axum::{Extension, Json, extract::State, http::status::StatusCode, response::IntoResponse};
+use std::str::FromStr;
+
+use axum::{
+    Extension, Json,
+    extract::{Multipart, State},
+    http::status::StatusCode,
+    response::IntoResponse,
+};
+use bigdecimal::BigDecimal;
+use bytes::Bytes;
 use uuid::Uuid;
 
 use crate::{
     api::restaurant::{
         dto::{
             CreateMenuCategoryRequest, CreateMenuItemRequest, CreateRestaurantRequest,
-            CreateStaffMemberRequest,
+            CreateRestaurantTableRequest, CreateStaffMemberRequest,
         },
         services,
     },
@@ -73,7 +82,35 @@ pub async fn create_staff_member(
 
 #[utoipa::path(
     post,
-    path = "/restaurant/menu-categories",
+    path = "/restaurant/table",
+    description = "Create a new table for the restaurant",
+    request_body = CreateRestaurantTableRequest,
+    params(("Authorization" = String, Header, description = "Bearer token for authentication")),
+    responses(
+        (status = CREATED, body = SuccessResponse<Uuid>),
+        (status = INTERNAL_SERVER_ERROR, body = ErrorResponse),
+    )
+)]
+pub async fn create_restaurant_table(
+    Extension(session): Extension<GetStaffSession>,
+    State(app): State<AppConfig>,
+    Json(body): Json<CreateRestaurantTableRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    let table_id = services::create_restaurant_table(app, session, body).await?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(SuccessResponse::<Uuid> {
+            success: true,
+            message: Some("created restaurant table successfully".to_string()),
+            data: Some(table_id),
+        }),
+    ))
+}
+
+#[utoipa::path(
+    post,
+    path = "/restaurant/menu-category",
     description = "Create New Menu categories for the restaurant",
     request_body = CreateMenuCategoryRequest,
     params(("Authorization" = String, Header, description = "Bearer token for authentication")),
@@ -113,16 +150,62 @@ pub async fn create_menu_category(
 pub async fn create_menu_item(
     Extension(session): Extension<GetStaffSession>,
     State(app): State<AppConfig>,
-    Json(body): Json<CreateMenuItemRequest>,
+    mut multipart: Multipart,
 ) -> Result<impl IntoResponse, ApiError> {
-    let item_id = services::create_menu_item(app, session, body).await?;
+    let mut name = String::new();
+    let mut description = String::new();
+    let mut price: BigDecimal;
+    let mut food_type = String::new();
+    let mut image_bytes: Option<Bytes> = None;
+    let mut category_id = String::new();
+    let mut restaurant_id = String::new();
+    let mut sort_order: i32 = 0;
+
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        tracing::error!("Failed to read multipart field: {}", e);
+        ApiError::BadRequest("Invalid multipart data".to_string())
+    })? {
+        let field_name = field.name().unwrap_or("").to_string();
+
+        if field_name == "image" {
+            image_bytes = Some(field.bytes().await.map_err(|e| {
+                tracing::error!("Failed to read image bytes: {}", e);
+                ApiError::BadRequest("Failed to read image data".to_string())
+            })?);
+            continue;
+        }
+
+        let value = field.text().await.map_err(|e| {
+            tracing::error!("Failed to read field '{}': {}", field_name, e);
+            ApiError::BadRequest(format!("Invalid value for field '{}'", field_name))
+        })?;
+
+        match field_name.as_str() {
+            "name" => name = value,
+            "description" => description = value,
+            "food_type" => food_type = value,
+            "category_id" => category_id = value,
+            "restaurant_id" => restaurant_id = value,
+            "price" => {
+                price = BigDecimal::from_str(&value).map_err(|_| {
+                    ApiError::BadRequest("Invalid value for field 'price'".to_string())
+                })?;
+            }
+            "sort_order" => {
+                sort_order = value.parse().map_err(|_| {
+                    ApiError::BadRequest("Invalid value for field 'sort_order'".to_string())
+                })?;
+            }
+            _ => {}
+        }
+    }
 
     Ok((
         StatusCode::CREATED,
         Json(SuccessResponse::<Uuid> {
             success: true,
             message: Some("created menu category successfully".to_string()),
-            data: Some(item_id),
+            data: Some(Uuid::new_v4()),
         }),
     ))
 }

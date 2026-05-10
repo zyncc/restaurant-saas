@@ -8,6 +8,7 @@ use crate::{
 };
 
 pub async fn create_checkout_session(
+    trial: bool,
     email: &str,
     stripe_price_id: &str,
     user_id: &str,
@@ -20,31 +21,30 @@ pub async fn create_checkout_session(
         return ApiError::InternalServerError;
     })?;
 
+    let mut params = vec![
+        ("success_url", "http://localhost:3000/onboarding"),
+        ("cancel_url", "http://localhost:3000/pricing"),
+        ("line_items[0][price]", stripe_price_id),
+        ("line_items[0][quantity]", "1"),
+        ("mode", "subscription"),
+        ("customer_email", email),
+        ("payment_method_types[0]", "card"),
+        ("metadata[user_id]", user_id),
+        ("metadata[plan]", plan),
+        ("metadata[duration]", duration),
+        ("subscription_data[metadata][user_id]", user_id),
+        ("subscription_data[metadata][plan]", plan),
+        ("subscription_data[metadata][duration]", &duration),
+    ];
+
+    if trial {
+        params.push(("subscription_data[trial_period_days]", "14"));
+    }
+
     let response = client
         .post("https://api.stripe.com/v1/checkout/sessions")
         .basic_auth(stripe_secret_key, Option::<&str>::None)
-        .form(&[
-            ("success_url", "http://localhost:3000/onboarding"),
-            ("cancel_url", "http://localhost:3000/pricing"),
-            ("line_items[0][price]", &stripe_price_id),
-            ("line_items[0][quantity]", "1"),
-            ("mode", "subscription"),
-            ("customer_email", &email),
-            ("payment_method_types[0]", "card"),
-            ("branding_settings[border_style]", "pill"),
-            ("branding_settings[display_name]", "Restaurant SAAS"),
-            ("branding_settings[logo][type]", "url"),
-            (
-                "branding_settings[logo][url]",
-                "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/youtube.png",
-            ),
-            ("metadata[user_id]", &user_id),
-            ("metadata[plan]", &plan),
-            ("metadata[duration]", &duration),
-            ("subscription_data[metadata][user_id]", &user_id),
-            ("subscription_data[metadata][plan]", &plan),
-            ("subscription_data[metadata][duration]", &duration),
-        ])
+        .form(&params)
         .send()
         .await
         .map_err(|e| {

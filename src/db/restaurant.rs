@@ -3,7 +3,8 @@ use uuid::Uuid;
 
 use crate::{
     db::models::restaurant::{
-        CreateMenuCategoryParams, CreateMenuItemParams, CreateRestaurantParams, Restaurant,
+        CreateMenuCategoryParams, CreateMenuItemParams, CreateRestaurantParams,
+        CreateRestaurantTableParams, Restaurant,
     },
     error::ApiError,
 };
@@ -60,6 +61,29 @@ impl RestaurantRepository {
             data.name,
             data.description,
             data.sort_order,
+            data.is_active
+        )
+        .execute(executor)
+        .await
+        .map_err(|e| {
+            tracing::error!("db error: {e}");
+            ApiError::InternalServerError
+        })?;
+
+        Ok(())
+    }
+
+    pub async fn create_table(
+        executor: impl PgExecutor<'_>,
+        data: CreateRestaurantTableParams,
+    ) -> Result<(), ApiError> {
+        sqlx::query!(
+            "INSERT INTO tables (id, restaurant_id, table_number, label, is_active)
+            VALUES ($1, $2, $3, $4, $5)",
+            data.id,
+            data.restaurant_id,
+            data.table_number,
+            data.label,
             data.is_active
         )
         .execute(executor)

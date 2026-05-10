@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = "0.8.9"
+axum = { version = "0.8.9", features = ["multipart"] }
 chrono = { version = "0.4.44", features = ["serde"] }
 dotenvy = "0.15.7"
 rand = { version = "0.8", features = ["std"] }
@@ -33,6 +33,7 @@ aws-sdk-s3 = "1.131.0"
 tower_governor = "0.6.0"
 governor = "0.8"
 bigdecimal = { version = "0.4.10", features = ["serde"] }
+bytes = "1.11.1"
 
 [profile.release]
 panic = "abort"

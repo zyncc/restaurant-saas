@@ -5,6 +5,7 @@ use utoipa::ToSchema;
 pub struct CreateCheckoutSessionRequest {
     pub plan: String,
     pub duration: String,
+    pub trial: bool,
 }
 
 #[derive(Debug, Deserialize)]

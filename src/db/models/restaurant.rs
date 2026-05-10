@@ -61,6 +61,23 @@ pub struct CreateMenuCategoryParams {
     pub is_active: bool,
 }
 
+pub struct RestaurantTable {
+    pub id: Uuid,
+    pub restaurant_id: Uuid,
+    pub table_number: String,
+    pub label: Option<String>,
+    pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+}
+
+pub struct CreateRestaurantTableParams {
+    pub id: Uuid,
+    pub restaurant_id: Uuid,
+    pub table_number: String,
+    pub label: Option<String>,
+    pub is_active: bool,
+}
+
 pub struct CreateMenuItemParams {
     pub id: Uuid,
     pub restaurant_id: Uuid,

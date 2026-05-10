@@ -1,14 +1,18 @@
+use axum::extract::Multipart;
 use uuid::Uuid;
 
 use crate::{
     api::restaurant::dto::{
         CreateMenuCategoryRequest, CreateMenuItemRequest, CreateRestaurantRequest,
-        CreateStaffMemberRequest,
+        CreateRestaurantTableRequest, CreateStaffMemberRequest,
     },
     config::AppConfig,
     db::{
         models::{
-            restaurant::{CreateMenuCategoryParams, CreateMenuItemParams, CreateRestaurantParams},
+            restaurant::{
+                CreateMenuCategoryParams, CreateMenuItemParams, CreateRestaurantParams,
+                CreateRestaurantTableParams,
+            },
             session::GetStaffSession,
             staff::CreateStaffMemberParams,
         },
@@ -135,7 +139,7 @@ pub async fn create_menu_category(
         name: body.name,
         description: body.description,
         sort_order: body.sort_order,
-        is_active: body.is_active,
+        is_active: true,
     };
 
     RestaurantRepository::create_menu_category(&app.db, payload).await?;
@@ -156,26 +160,30 @@ pub async fn create_menu_category(
     Ok(category_id)
 }
 
-pub async fn create_menu_item(
+pub async fn create_restaurant_table(
     app: AppConfig,
     session: GetStaffSession,
-    body: CreateMenuItemRequest,
+    body: CreateRestaurantTableRequest,
 ) -> Result<Uuid, ApiError> {
-    let item_id = Uuid::new_v4();
-    let payload = CreateMenuItemParams {
-        id: item_id,
+    let find_restaurant = RestaurantRepository::get_by_id(&app.db, body.restaurant_id).await?;
+    if find_restaurant.is_none() {
+        return Err(ApiError::BadRequest("restaurant not found".to_string()));
+    }
+
+    if session.restaurant_id != Some(body.restaurant_id) {
+        return Err(ApiError::UnAuthorized);
+    }
+
+    let table_id = Uuid::new_v4();
+    let payload = CreateRestaurantTableParams {
+        id: table_id,
         restaurant_id: body.restaurant_id,
-        category_id: body.category_id,
-        name: body.name,
-        price: body.price,
-        description: body.description,
-        food_type: body.food_type,
-        image_url: body.image_url,
-        is_available: body.is_available,
-        sort_order: body.sort_order,
+        table_number: body.table_number,
+        label: body.label,
+        is_active: true,
     };
 
-    RestaurantRepository::create_menu_item(&app.db, payload).await?;
+    RestaurantRepository::create_table(&app.db, payload).await?;
 
     tokio::spawn(async move {
         create_audit_log(
@@ -184,11 +192,15 @@ pub async fn create_menu_item(
             session.id,
             session.name,
             session.role,
-            "menu.item.created".to_string(),
-            "menu".to_string(),
+            "table.created".to_string(),
+            "table".to_string(),
         )
         .await
     });
 
-    Ok(item_id)
+    Ok(table_id)
+}
+
+pub async fn create_menu_item(app: AppConfig, session: GetStaffSession) -> Result<(), ApiError> {
+    Ok(())
 }

@@ -27,7 +27,13 @@ pub struct CreateMenuCategoryRequest {
     pub name: String,
     pub description: String,
     pub sort_order: i32,
-    pub is_active: bool,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CreateRestaurantTableRequest {
+    pub restaurant_id: Uuid,
+    pub table_number: String,
+    pub label: Option<String>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -39,7 +45,6 @@ pub struct CreateMenuItemRequest {
     #[schema(value_type = f64)]
     pub price: BigDecimal,
     pub image_url: String,
-    pub is_available: bool,
     pub food_type: String,
     pub sort_order: i32,
 }

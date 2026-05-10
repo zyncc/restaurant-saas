@@ -21,7 +21,7 @@ pub fn restaurant_handler(state: AppConfig) -> Router<AppConfig> {
         .route("/staff", post(routes::create_staff_member))
         .route("/table", post(routes::create_restaurant_table))
         .route("/menu-category", post(routes::create_menu_category))
-        .route("/menu-item", post(routes::create_menu_item))
+        // .route("/menu-item", post(routes::create_menu_item))
         .layer(middleware::from_fn_with_state(state, protect_manager_route));
 
     Router::new().merge(owner_routes).merge(manager_routes)

@@ -31,6 +31,5 @@ pub fn init() {
     crate::api::restaurant::routes::create_restaurant,
     crate::api::restaurant::routes::create_staff_member,
     crate::api::restaurant::routes::create_menu_category,
-    crate::api::restaurant::routes::create_menu_item,
 ))]
 pub struct ApiDoc;

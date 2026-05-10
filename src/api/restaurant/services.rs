@@ -1,17 +1,15 @@
-use axum::extract::Multipart;
 use uuid::Uuid;
 
 use crate::{
     api::restaurant::dto::{
-        CreateMenuCategoryRequest, CreateMenuItemRequest, CreateRestaurantRequest,
-        CreateRestaurantTableRequest, CreateStaffMemberRequest,
+        CreateMenuCategoryRequest, CreateRestaurantRequest, CreateRestaurantTableRequest,
+        CreateStaffMemberRequest,
     },
     config::AppConfig,
     db::{
         models::{
             restaurant::{
-                CreateMenuCategoryParams, CreateMenuItemParams, CreateRestaurantParams,
-                CreateRestaurantTableParams,
+                CreateMenuCategoryParams, CreateRestaurantParams, CreateRestaurantTableParams,
             },
             session::GetStaffSession,
             staff::CreateStaffMemberParams,
@@ -200,6 +198,6 @@ pub async fn create_restaurant_table(
     Ok(table_id)
 }
 
-pub async fn create_menu_item(app: AppConfig, session: GetStaffSession) -> Result<(), ApiError> {
-    Ok(())
-}
+// pub async fn create_menu_item(app: AppConfig, session: GetStaffSession) -> Result<(), ApiError> {
+//     Ok(())
+// }

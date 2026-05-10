@@ -1,3 +1,5 @@
+#![allow(unused_variables, unused_imports, dead_code)]
+
 mod api;
 mod config;
 mod db;

@@ -19,18 +19,18 @@ pub async fn create_checkout(
 ) -> Result<String, ApiError> {
     // check if user already has an active subscription
     // TODO: UNCOMMENT THIS LATER
-    // let subscription = SubscriptionRepository::check_active_subscription(&app.db)
-    //     .await
-    //     .map_err(|e| {
-    //         tracing::error!("failed to fetch active subscription: {}", e);
-    //         ApiError::InternalServerError
-    //     })?;
+    let subscription = SubscriptionRepository::check_active_subscription(&app.db)
+        .await
+        .map_err(|e| {
+            tracing::error!("failed to fetch active subscription: {}", e);
+            ApiError::InternalServerError
+        })?;
 
-    // if subscription.is_some() {
-    //     return Err(ApiError::BadRequest(
-    //         "you already have an active subscription".to_string(),
-    //     ));
-    // }
+    if subscription.is_some() {
+        return Err(ApiError::BadRequest(
+            "you already have an active subscription".to_string(),
+        ));
+    }
 
     let stripe_price_id;
     let plan;
@@ -130,7 +130,7 @@ pub async fn webhook_subscription_created(
 
     let data = CreateSubscriptionDto {
         id: Uuid::new_v4(),
-        staff_id: staff_id,
+        staff_id,
         stripe_subscription_id: event.data.object.items.data[0].subscription.clone(),
         stripe_customer_id: event.data.object.customer.clone(),
         stripe_price_id: event.data.object.items.data[0].price.id.clone(),

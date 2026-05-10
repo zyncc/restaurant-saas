@@ -8,6 +8,8 @@ pub struct StaffMember {
     pub restaurant_id: Option<Uuid>,
     pub name: String,
     pub email: String,
+    pub phone: String,
+    pub phone_verified: bool,
     pub password_hash: String,
     pub role: String,
     pub onboarding_step: Option<String>,

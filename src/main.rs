@@ -15,7 +15,7 @@ use crate::{
     config::AppConfig,
     db::connect_to_db,
     middleware::cors::cors,
-    ratelimit::strict_ratelimitter,
+    ratelimit::strict_ratelimiter,
 };
 use axum::Router;
 use std::net::SocketAddr;
@@ -42,7 +42,7 @@ async fn main() {
         .layer(cors())
         .with_state(app_config)
         .layer(GovernorLayer {
-            config: strict_ratelimitter(),
+            config: strict_ratelimiter(),
         })
         .merge(SwaggerUi::new("/swagger-ui").url("/docs/openapi.json", config::ApiDoc::openapi()));
 

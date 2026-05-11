@@ -1,7 +1,9 @@
 use chrono::{DateTime, Utc};
+use serde::Serialize;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
-#[derive(Debug, sqlx::FromRow)]
+#[derive(Debug, sqlx::FromRow, Serialize, ToSchema)]
 pub struct AuditLog {
     pub id: Uuid,
     pub restaurant_id: Uuid,

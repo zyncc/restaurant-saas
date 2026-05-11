@@ -19,12 +19,7 @@ pub async fn create_checkout(
 ) -> Result<String, ApiError> {
     // check if user already has an active subscription
     // TODO: UNCOMMENT THIS LATER
-    let subscription = SubscriptionRepository::check_active_subscription(&app.db)
-        .await
-        .map_err(|e| {
-            tracing::error!("failed to fetch active subscription: {}", e);
-            ApiError::InternalServerError
-        })?;
+    let subscription = SubscriptionRepository::check_active_subscription(&app.db).await?;
 
     if subscription.is_some() {
         return Err(ApiError::BadRequest(
@@ -148,13 +143,7 @@ pub async fn webhook_subscription_created(
         ApiError::InternalServerError
     })?;
 
-    SubscriptionRepository::create_subscription(&mut *tx, data)
-        .await
-        .map_err(|e| {
-            tracing::error!("failed to create subscription {}", e);
-            ApiError::InternalServerError
-        })?;
-
+    SubscriptionRepository::create_subscription(&mut *tx, data).await?;
     StaffRepository::update_onboarding_step(
         &mut *tx,
         staff_id,

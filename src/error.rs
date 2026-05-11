@@ -1,13 +1,13 @@
 use crate::utils::api_responses::ErrorResponse;
 use axum::{
     Json,
-    http::StatusCode,
+    extract::{FromRequest, rejection::JsonRejection},
+    http::{Request, StatusCode},
     response::{IntoResponse, Response},
 };
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-#[allow(dead_code)]
 pub enum ApiError {
     #[error("Bad request: {0}")]
     BadRequest(String),
@@ -46,9 +46,39 @@ impl IntoResponse for ApiError {
 
         let body = Json(ErrorResponse {
             success: false,
-            error: message.to_string(),
+            message: message.to_string(),
         })
         .into_response();
         (status, body).into_response()
+    }
+}
+
+pub struct ValidatedJson<T>(pub T);
+
+impl<S, T> FromRequest<S> for ValidatedJson<T>
+where
+    Json<T>: FromRequest<S, Rejection = JsonRejection>,
+    S: Send + Sync,
+{
+    type Rejection = ApiError;
+
+    async fn from_request(
+        req: Request<axum::body::Body>,
+        state: &S,
+    ) -> Result<Self, Self::Rejection> {
+        match Json::<T>::from_request(req, state).await {
+            Ok(value) => Ok(Self(value.0)),
+            Err(rejection) => {
+                let message = match rejection {
+                    JsonRejection::JsonDataError(_) => "Invalid request body",
+                    JsonRejection::JsonSyntaxError(_) => "Malformed JSON",
+                    JsonRejection::MissingJsonContentType(_) => {
+                        "Content-Type must be application/json"
+                    }
+                    _ => "Bad request",
+                };
+                Err(ApiError::BadRequest(message.to_string()))
+            }
+        }
     }
 }

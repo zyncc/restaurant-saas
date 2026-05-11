@@ -14,12 +14,13 @@ impl StaffRepository {
         data: CreateStaffMemberParams,
     ) -> Result<(), ApiError> {
         sqlx::query!(
-            "INSERT INTO restaurant_staff (id, restaurant_id, name, email, password_hash, role)
-             VALUES ($1, $2, $3, $4, $5, $6)",
+            "INSERT INTO restaurant_staff (id, restaurant_id, name, email, phone, password_hash, role)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)",
             data.id,
             data.restaurant_id,
             data.name,
             data.email,
+            data.phone,
             data.password_hash,
             data.role,
         )
@@ -43,16 +44,22 @@ impl StaffRepository {
         data: CreateOwnerParams,
     ) -> Result<(), ApiError> {
         sqlx::query!(
-            "INSERT INTO restaurant_staff (id, name, email, password_hash, role, onboarding_step) VALUES ($1, $2, $3, $4, $5, $6)",
+            "INSERT INTO restaurant_staff (id, name, email, phone, password_hash, role, onboarding_step) VALUES ($1, $2, $3, $4, $5, $6, $7)",
             data.id,
             data.name,
             data.email,
+            data.phone,
             data.password_hash,
             "user",
             "subscription",
         )
         .execute(executor)
         .await.map_err(|e| {
+            if e.to_string().contains("violates unique constraint") {
+                return ApiError::BadRequest(
+                    "user with these credentials already exists".to_string(),
+                );
+            }
             tracing::error!("db error: {}", e);
             ApiError::InternalServerError
         })?;
@@ -63,13 +70,13 @@ impl StaffRepository {
     pub async fn find_by_email(
         executor: impl PgExecutor<'_>,
         email: &str,
-    ) -> Result<StaffMember, ApiError> {
+    ) -> Result<Option<StaffMember>, ApiError> {
         let staff = sqlx::query_as!(
             StaffMember,
             "SELECT * FROM restaurant_staff WHERE email = $1",
             email
         )
-        .fetch_one(executor)
+        .fetch_optional(executor)
         .await
         .map_err(|e| {
             tracing::error!("db error: {}", e);

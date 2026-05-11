@@ -18,13 +18,13 @@ pub struct StaffMember {
     pub updated_at: DateTime<Utc>,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct CreateStaffMemberParams {
     pub id: Uuid,
     pub restaurant_id: Uuid,
     pub name: String,
     pub email: String,
+    pub phone: String,
     pub password_hash: String,
     pub role: String,
 }
@@ -33,5 +33,6 @@ pub struct CreateOwnerParams {
     pub id: Uuid,
     pub name: String,
     pub email: String,
+    pub phone: String,
     pub password_hash: String,
 }

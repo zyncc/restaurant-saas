@@ -1,15 +1,17 @@
 use sqlx::PgExecutor;
 
-use crate::db::models::subscription::{CreateSubscriptionDto, Subscription};
+use crate::{
+    db::models::subscription::{CreateSubscriptionDto, Subscription},
+    error::ApiError,
+};
 
 pub struct SubscriptionRepository;
 
-#[allow(dead_code)]
 impl SubscriptionRepository {
     pub async fn create_subscription(
         executor: impl PgExecutor<'_>,
         data: CreateSubscriptionDto,
-    ) -> Result<(), sqlx::Error> {
+    ) -> Result<(), ApiError> {
         sqlx::query!(
             "
         INSERT INTO subscriptions (
@@ -40,20 +42,28 @@ impl SubscriptionRepository {
             data.trial_ends_at,
         )
         .execute(executor)
-        .await?;
+        .await
+        .map_err(|e| {
+            tracing::error!("db error: {}", e);
+            ApiError::InternalServerError
+        })?;
 
         Ok(())
     }
 
     pub async fn check_active_subscription(
         executor: impl PgExecutor<'_>,
-    ) -> Result<Option<Subscription>, sqlx::Error> {
+    ) -> Result<Option<Subscription>, ApiError> {
         let subscription = sqlx::query_as!(
             Subscription,
             "SELECT * FROM subscriptions WHERE status = 'active'"
         )
         .fetch_optional(executor)
-        .await?;
+        .await
+        .map_err(|e| {
+            tracing::error!("db error: {}", e);
+            ApiError::InternalServerError
+        })?;
 
         Ok(subscription)
     }

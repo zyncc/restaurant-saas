@@ -17,6 +17,7 @@ pub struct CreateStaffMemberRequest {
     pub restaurant_id: Uuid,
     pub name: String,
     pub email: String,
+    pub phone: String,
     pub password: String,
     pub role: String,
 }
@@ -34,6 +35,11 @@ pub struct CreateRestaurantTableRequest {
     pub restaurant_id: Uuid,
     pub table_number: String,
     pub label: Option<String>,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct FetchAuditLogsQuery {
+    pub restaurant_id: Uuid,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

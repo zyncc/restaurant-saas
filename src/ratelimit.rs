@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use governor::clock::QuantaInstant;
 use governor::middleware::NoOpMiddleware;
@@ -14,12 +15,12 @@ use tower_governor::GovernorError;
 
 use crate::utils::api_responses::ErrorResponse;
 
-pub fn strict_ratelimitter()
+pub fn strict_ratelimiter()
 -> Arc<GovernorConfig<SmartIpKeyExtractor, NoOpMiddleware<QuantaInstant>>> {
     Arc::new(
         GovernorConfigBuilder::default()
-            .per_second(1)
-            .burst_size(100)
+            .period(Duration::from_secs(60 / 50)) // 5 requests per minute
+            .burst_size(50)
             .key_extractor(SmartIpKeyExtractor)
             .error_handler(handle_governor_error)
             .finish()
@@ -49,7 +50,7 @@ fn handle_governor_error(err: GovernorError) -> Response {
         status,
         Json(ErrorResponse {
             success: false,
-            error: msg,
+            message: msg,
         }),
     )
         .into_response()

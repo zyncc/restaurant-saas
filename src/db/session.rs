@@ -1,6 +1,9 @@
 use sqlx::PgExecutor;
 
-use crate::db::models::session::{CreateStaffSessionParams, GetStaffSession};
+use crate::{
+    db::models::session::{CreateStaffSessionParams, GetStaffSession},
+    error::ApiError,
+};
 
 pub struct SessionRepository;
 
@@ -8,7 +11,7 @@ impl SessionRepository {
     pub async fn create_session(
         executor: impl PgExecutor<'_>,
         data: CreateStaffSessionParams,
-    ) -> Result<(), sqlx::Error> {
+    ) -> Result<(), ApiError> {
         sqlx::query!(
             "INSERT INTO staff_sessions (
             id,
@@ -26,7 +29,11 @@ impl SessionRepository {
             data.user_agent
         )
         .execute(executor)
-        .await?;
+        .await
+        .map_err(|e| {
+            tracing::error!("db error: {}", e);
+            ApiError::InternalServerError
+        })?;
 
         Ok(())
     }
@@ -34,13 +41,17 @@ impl SessionRepository {
     pub async fn delete_session(
         executor: impl PgExecutor<'_>,
         session_token: &str,
-    ) -> Result<(), sqlx::Error> {
+    ) -> Result<(), ApiError> {
         sqlx::query!(
             "DELETE FROM staff_sessions WHERE session_token = $1",
             session_token
         )
         .execute(executor)
-        .await?;
+        .await
+        .map_err(|e| {
+            tracing::error!("db error: {}", e);
+            ApiError::InternalServerError
+        })?;
 
         Ok(())
     }
@@ -48,7 +59,7 @@ impl SessionRepository {
     pub async fn fetch_staff_session(
         executor: impl PgExecutor<'_>,
         session_token: &str,
-    ) -> Result<Option<GetStaffSession>, sqlx::Error> {
+    ) -> Result<Option<GetStaffSession>, ApiError> {
         let session = sqlx::query_as!(
             GetStaffSession,
             r#"SELECT
@@ -70,7 +81,11 @@ impl SessionRepository {
             session_token
         )
         .fetch_optional(executor)
-        .await?;
+        .await
+        .map_err(|e| {
+            tracing::error!("db error: {}", e);
+            ApiError::BadRequest("invalid credentials".to_string())
+        })?;
 
         Ok(session)
     }

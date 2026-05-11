@@ -38,6 +38,11 @@ pub struct CreateRestaurantTableRequest {
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
+pub struct FetchAuditLogsQuery {
+    pub restaurant_id: Uuid,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateMenuItemRequest {
     pub restaurant_id: Uuid,
     pub category_id: Uuid,

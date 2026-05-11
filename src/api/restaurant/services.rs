@@ -8,6 +8,7 @@ use crate::{
     config::AppConfig,
     db::{
         models::{
+            audit::AuditLog,
             restaurant::{
                 CreateMenuCategoryParams, CreateRestaurantParams, CreateRestaurantTableParams,
             },
@@ -202,3 +203,13 @@ pub async fn create_restaurant_table(
 // pub async fn create_menu_item(app: AppConfig, session: GetStaffSession) -> Result<(), ApiError> {
 //     Ok(())
 // }
+//
+
+pub async fn fetch_audit_logs(
+    app: AppConfig,
+    session: GetStaffSession,
+    restaurant_id: Uuid,
+) -> Result<Vec<AuditLog>, ApiError> {
+    let logs = RestaurantRepository::fetch_audit_logs(&app.db, restaurant_id).await?;
+    Ok(logs)
+}

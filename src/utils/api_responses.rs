@@ -11,5 +11,5 @@ pub struct SuccessResponse<T> {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ErrorResponse {
     pub success: bool,
-    pub error: String,
+    pub message: String,
 }

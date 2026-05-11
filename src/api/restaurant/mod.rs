@@ -2,7 +2,10 @@ pub mod dto;
 pub mod routes;
 pub mod services;
 
-use axum::{Router, middleware, routing::post};
+use axum::{
+    Router, middleware,
+    routing::{get, post},
+};
 
 use crate::{
     config::AppConfig,
@@ -21,6 +24,7 @@ pub fn restaurant_handler(state: AppConfig) -> Router<AppConfig> {
         .route("/staff", post(routes::create_staff_member))
         .route("/table", post(routes::create_restaurant_table))
         .route("/menu-category", post(routes::create_menu_category))
+        .route("/audit-logs", get(routes::fetch_audit_logs))
         // .route("/menu-item", post(routes::create_menu_item))
         .layer(middleware::from_fn_with_state(state, protect_manager_route));
 

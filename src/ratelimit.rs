@@ -50,7 +50,7 @@ fn handle_governor_error(err: GovernorError) -> Response {
         status,
         Json(ErrorResponse {
             success: false,
-            error: msg,
+            message: msg,
         }),
     )
         .into_response()

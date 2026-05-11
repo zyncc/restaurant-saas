@@ -46,7 +46,7 @@ impl IntoResponse for ApiError {
 
         let body = Json(ErrorResponse {
             success: false,
-            error: message.to_string(),
+            message: message.to_string(),
         })
         .into_response();
         (status, body).into_response()

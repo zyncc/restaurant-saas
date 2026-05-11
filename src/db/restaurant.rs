@@ -2,9 +2,12 @@ use sqlx::PgExecutor;
 use uuid::Uuid;
 
 use crate::{
-    db::models::restaurant::{
-        CreateMenuCategoryParams, CreateMenuItemParams, CreateRestaurantParams,
-        CreateRestaurantTableParams, Restaurant,
+    db::models::{
+        audit::AuditLog,
+        restaurant::{
+            CreateMenuCategoryParams, CreateMenuItemParams, CreateRestaurantParams,
+            CreateRestaurantTableParams, Restaurant,
+        },
     },
     error::ApiError,
 };
@@ -126,5 +129,24 @@ impl RestaurantRepository {
         })?;
 
         Ok(())
+    }
+
+    pub async fn fetch_audit_logs(
+        executor: impl PgExecutor<'_>,
+        restaurant_id: Uuid,
+    ) -> Result<Vec<AuditLog>, ApiError> {
+        let logs = sqlx::query_as!(
+            AuditLog,
+            "SELECT * FROM audit_logs WHERE restaurant_id = $1 ORDER BY created_at DESC",
+            restaurant_id
+        )
+        .fetch_all(executor)
+        .await
+        .map_err(|e| {
+            tracing::error!("db error: {e}");
+            ApiError::InternalServerError
+        })?;
+
+        Ok(logs)
     }
 }
